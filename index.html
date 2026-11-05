@@ -9,7 +9,7 @@
 body{margin:0;font-family:system-ui,sans-serif;background:#f4f6f8;color:#17202b;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .s{display:none;padding:24px;max-width:480px;margin:0 auto}
 .s.on{display:block}
-h1{font-size:30px;text-align:center;margin:40px 0 4px}
+h1{font-size:30px;text-align:center;margin:8px 0 4px}
 h2{font-size:24px;margin:12px 0 4px}
 .sub{color:#666;text-align:center;margin:0 0 28px}
 .small{color:#666;margin:0 0 18px}
@@ -28,25 +28,34 @@ button{font:inherit;cursor:pointer}
 .r{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
 .r b{text-align:right}
 .chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-.chip{background:#fff;border:1px solid #ddd;border-radius:20px;padding:10px 18px;font-size:16px;font-weight:600}
+.chip{background:#fff;border:1px solid #ddd;border-radius:20px;padding:10px 18px;font-size:16px;font-weight:600;color:#333}
 .chip.on{background:#f5a623;border-color:#f5a623;color:#fff}
-.opt{display:flex;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:10px;width:100%;text-align:left;font-size:16px}
+.opt{display:flex;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:10px;width:100%;text-align:left;font-size:16px;color:#17202b}
 .opt.on{border-color:#f5a623}
 .opt i{color:#f5a623;font-style:normal}
 .sec{font-weight:600;margin:6px 0 8px}
 .tick{font-size:64px;text-align:center;color:#1f8a52;margin-top:30px}
 .tok{font-size:22px;font-weight:700;letter-spacing:1px;margin-top:6px}
-.hist{width:100%;text-align:left;border:0;display:block;font:inherit;color:inherit}
+.hist{width:100%;text-align:left;border:0;background:none;padding:0;display:block;font:inherit;color:inherit}
 .top{display:flex;justify-content:space-between;align-items:center}
 .u{font-size:18px;font-weight:700;color:#1f8a52}
 .det{margin-top:14px;padding-top:14px;border-top:1px solid #eee}
+.bar{background:#17202b;color:#fff;padding:14px 24px;text-align:center}
+.bar b{display:block;font-size:15px;letter-spacing:.3px}
+.bar span{font-size:12px;color:#f5a623}
+.demo{background:#fff4dc;color:#7a5200;font-size:12px;text-align:center;padding:6px}
+.pulse{font-size:40px;text-align:center;margin:40px 0 10px;animation:p 1.2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
 </style>
 </head>
 <body>
 
+<div class="bar"><b>Northwestern Energy Corporation</b><span>PowerPay customer app</span></div>
+<div class="demo">Demo version. Example data, no real payments.</div>
+
 <!-- LOGIN -->
 <div class="s on" id="login">
-  <h1>⚡ PowerPay</h1>
+  <h1 style="margin-top:36px">⚡ PowerPay</h1>
   <p class="sub">Sign in to your account</p>
   <input id="acc" inputmode="numeric" placeholder="Account number">
   <input id="pin" type="password" inputmode="numeric" placeholder="PIN">
@@ -82,6 +91,8 @@ button{font:inherit;cursor:pointer}
   </div>
   <div class="sec">Pay with</div>
   <div id="methods"></div>
+  <div class="sec">Mobile money number</div>
+  <input id="phone" inputmode="numeric" placeholder="e.g. 097 123 4567" oninput="calc()">
   <button class="b" id="cont" onclick="toConfirm()" disabled>Continue</button>
 </div>
 
@@ -91,7 +102,15 @@ button{font:inherit;cursor:pointer}
   <h2>Confirm purchase</h2>
   <div class="c" style="margin-top:20px" id="sum"></div>
   <button class="b" id="pay" onclick="pay()"></button>
-  <p class="n">Payment is simulated. No money is taken.</p>
+  <p class="n">Demo only. No money is taken.</p>
+</div>
+
+<!-- WAITING FOR APPROVAL -->
+<div class="s" id="wait">
+  <div class="pulse">📱</div>
+  <h1>Check your phone</h1>
+  <p class="sub" id="waitMsg"></p>
+  <p class="n" style="text-align:center">Waiting for approval. In the real app this step waits for the network to confirm.</p>
 </div>
 
 <!-- SUCCESS -->
@@ -117,32 +136,34 @@ button{font:inherit;cursor:pointer}
   <button class="lk" onclick="go('home')">‹ Back</button>
   <h2>My account</h2>
   <div class="c" style="margin-top:20px" id="acctCard"></div>
-  <p class="n">To change these details, contact the power company.</p>
+  <p class="n">To change these details, contact Northwestern Energy Corporation.</p>
 </div>
 
 <script>
-// ---------- EXAMPLE DATA (replaced by a real server in Step 4) ----------
+// ---------- EXAMPLE DATA (replaced by a real server later) ----------
 var PRICE = 1.5; // kwacha per kWh, example rate
 var AMOUNTS = [50, 100, 200, 500];
-var METHODS = ['MTN Mobile Money', 'Airtel Money', 'Bank card'];
+var METHODS = ['MTN Mobile Money', 'Airtel Money', 'Zamtel Kwacha'];
 var CUSTOMER = {name:'Sample Customer', phone:'097 000 0000', address:'Plot 12, Example Road, Lusaka', meter:'0123456789', tariff:'Residential'};
 var SAMPLE = [
-  {id:'P1004', date:'28 Oct 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', token:'4821 7305 9912 3347 0658'},
-  {id:'P1003', date:'14 Oct 2026', kwacha:100, units:66.7, method:'Airtel Money', token:'1190 6683 4027 5518 9034'},
-  {id:'P1002', date:'30 Sep 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', token:'7752 0146 3381 2269 8815'},
-  {id:'P1001', date:'15 Sep 2026', kwacha:50, units:33.3, method:'Bank card', token:'3306 9158 7724 0091 6642'}
+  {id:'P1004', date:'28 Oct 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', phone:'096 *** 1234', token:'4821 7305 9912 3347 0658'},
+  {id:'P1003', date:'14 Oct 2026', kwacha:100, units:66.7, method:'Airtel Money', phone:'097 *** 5678', token:'1190 6683 4027 5518 9034'},
+  {id:'P1002', date:'30 Sep 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', phone:'096 *** 1234', token:'7752 0146 3381 2269 8815'},
+  {id:'P1001', date:'15 Sep 2026', kwacha:50, units:33.3, method:'Zamtel Kwacha', phone:'095 *** 9012', token:'3306 9158 7724 0091 6642'}
 ];
 
 // ---------- STATE (saved on the phone so history survives closing the app) ----------
-var account = '', units = 42.5, purchases = SAMPLE.slice(), order = {kwacha:0, units:0, method:METHODS[0]};
+var account = '', units = 42.5, purchases = SAMPLE.slice(), order = {kwacha:0, units:0, method:METHODS[0], phone:''};
 try {
-  var saved = JSON.parse(localStorage.getItem('powerpay') || 'null');
+  var saved = JSON.parse(localStorage.getItem('powerpay2') || 'null');
   if (saved) { units = saved.units; purchases = saved.purchases; }
 } catch (e) {}
-function save() { try { localStorage.setItem('powerpay', JSON.stringify({units:units, purchases:purchases})); } catch (e) {} }
+function save() { try { localStorage.setItem('powerpay2', JSON.stringify({units:units, purchases:purchases})); } catch (e) {} }
 
 function $(id) { return document.getElementById(id); }
 function row(l, v) { return '<div class="r"><span class="l">' + l + '</span><b>' + v + '</b></div>'; }
+function digits(s) { return s.replace(/\D/g, ''); }
+function maskPhone(d) { return d.slice(0, 3) + ' *** ' + d.slice(-4); }
 
 // ---------- NAVIGATION ----------
 function go(name) {
@@ -191,15 +212,16 @@ function calc() {
   var k = parseFloat($('amt').value) || 0;
   order.kwacha = k;
   order.units = k / PRICE;
+  order.phone = digits($('phone').value);
   $('est').textContent = order.units.toFixed(1) + ' kWh';
-  $('cont').disabled = k < 10;
+  $('cont').disabled = !(k >= 10 && order.phone.length === 10);
   var chips = $('chips').children;
   for (var i = 0; i < chips.length; i++) chips[i].className = 'chip' + (AMOUNTS[i] === k ? ' on' : '');
 }
 
-// ---------- CONFIRM, PAY ----------
+// ---------- CONFIRM, WAIT, PAY ----------
 function toConfirm() {
-  $('sum').innerHTML = row('Meter', CUSTOMER.meter) + row('Amount', 'K' + order.kwacha.toFixed(2)) + row('Units', order.units.toFixed(1) + ' kWh') + row('Pay with', order.method);
+  $('sum').innerHTML = row('Meter', CUSTOMER.meter) + row('Amount', 'K' + order.kwacha.toFixed(2)) + row('Units', order.units.toFixed(1) + ' kWh') + row('Pay with', order.method) + row('Number', maskPhone(order.phone));
   $('pay').textContent = 'Pay K' + order.kwacha.toFixed(2);
   go('confirm');
 }
@@ -213,7 +235,12 @@ function today() {
   return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
 }
 function pay() {
-  var p = {id:'P' + (1001 + purchases.length), date:today(), kwacha:order.kwacha, units:order.units, method:order.method, token:fakeToken()};
+  $('waitMsg').textContent = 'Approve the K' + order.kwacha.toFixed(2) + ' payment on ' + maskPhone(order.phone) + ' with your ' + order.method + ' PIN.';
+  go('wait');
+  setTimeout(finish, 3000);
+}
+function finish() {
+  var p = {id:'P' + (1001 + purchases.length), date:today(), kwacha:order.kwacha, units:order.units, method:order.method, phone:maskPhone(order.phone), token:fakeToken()};
   purchases.unshift(p);
   units += order.units;
   save();
@@ -230,7 +257,7 @@ function renderHistory() {
     var p = purchases[i];
     total += p.kwacha;
     h += '<div class="c"><button class="hist" onclick="toggle(' + i + ')"><div class="top"><div><div class="v2">K' + p.kwacha.toFixed(2) + '</div><div class="l">' + p.date + '</div></div><div class="u">' + p.units.toFixed(1) + ' kWh</div></div></button>' +
-         '<div class="det" id="d' + i + '" style="display:none">' + row('Receipt', p.id) + row('Paid with', p.method) + '<div class="l">Token</div><div class="v2" style="letter-spacing:1px">' + p.token + '</div></div></div>';
+         '<div class="det" id="d' + i + '" style="display:none">' + row('Receipt', p.id) + row('Paid with', p.method) + row('Number', p.phone || '') + '<div class="l">Token</div><div class="v2" style="letter-spacing:1px">' + p.token + '</div></div></div>';
   }
   $('histSum').textContent = purchases.length + ' purchases, K' + total.toFixed(2) + ' in total';
   $('histList').innerHTML = h;
