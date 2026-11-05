@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PowerPay</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,sans-serif;background:#f4f6f8;color:#17202b;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.s{display:none;padding:24px;max-width:480px;margin:0 auto}
+.s.on{display:block}
+h1{font-size:30px;text-align:center;margin:40px 0 4px}
+h2{font-size:24px;margin:12px 0 4px}
+.sub{color:#666;text-align:center;margin:0 0 28px}
+.small{color:#666;margin:0 0 18px}
+input{width:100%;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff}
+button{font:inherit;cursor:pointer}
+.b{width:100%;background:#f5a623;color:#fff;border:0;border-radius:10px;padding:16px;font-size:18px;font-weight:600;margin-top:8px}
+.b:disabled{opacity:.4}
+.b2{width:100%;background:#fff;color:#333;border:1px solid #ddd;border-radius:10px;padding:16px;font-size:17px;font-weight:600;margin-top:10px}
+.lk{background:none;border:0;color:#888;font-size:16px;padding:0;margin:0 0 14px}
+.out{display:block;margin:20px auto 0}
+.c{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px}
+.l{color:#888;font-size:14px}
+.v{font-size:34px;font-weight:700;margin-top:4px}
+.v2{font-size:18px;font-weight:600;margin-top:2px}
+.n{color:#888;font-size:12px;margin-top:8px}
+.r{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
+.r b{text-align:right}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.chip{background:#fff;border:1px solid #ddd;border-radius:20px;padding:10px 18px;font-size:16px;font-weight:600}
+.chip.on{background:#f5a623;border-color:#f5a623;color:#fff}
+.opt{display:flex;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:10px;width:100%;text-align:left;font-size:16px}
+.opt.on{border-color:#f5a623}
+.opt i{color:#f5a623;font-style:normal}
+.sec{font-weight:600;margin:6px 0 8px}
+.tick{font-size:64px;text-align:center;color:#1f8a52;margin-top:30px}
+.tok{font-size:22px;font-weight:700;letter-spacing:1px;margin-top:6px}
+.hist{width:100%;text-align:left;border:0;display:block;font:inherit;color:inherit}
+.top{display:flex;justify-content:space-between;align-items:center}
+.u{font-size:18px;font-weight:700;color:#1f8a52}
+.det{margin-top:14px;padding-top:14px;border-top:1px solid #eee}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="s on" id="login">
+  <h1>⚡ PowerPay</h1>
+  <p class="sub">Sign in to your account</p>
+  <input id="acc" inputmode="numeric" placeholder="Account number">
+  <input id="pin" type="password" inputmode="numeric" placeholder="PIN">
+  <button class="b" onclick="signIn()">Sign in</button>
+</div>
+
+<!-- HOME -->
+<div class="s" id="home">
+  <h2>Hello, Sample Customer</h2>
+  <p class="small">Account: <span id="acctOut"></span></p>
+  <div class="c"><div class="l">Units remaining</div><div class="v" id="units"></div></div>
+  <div class="c">
+    <div class="l">Meter number</div><div class="v2" id="meter1"></div>
+    <div class="l" style="margin-top:12px">Last purchase</div><div class="v2" id="last"></div>
+  </div>
+  <button class="b" onclick="go('buy')">Buy power</button>
+  <button class="b2" onclick="go('history')">Purchase history</button>
+  <button class="b2" onclick="go('account')">My account</button>
+  <button class="lk out" onclick="signOut()">Sign out</button>
+</div>
+
+<!-- BUY -->
+<div class="s" id="buy">
+  <button class="lk" onclick="go('home')">‹ Back</button>
+  <h2>Buy power</h2>
+  <p class="small">Meter <span id="meter2"></span></p>
+  <div class="sec">Amount (kwacha)</div>
+  <div class="chips" id="chips"></div>
+  <input id="amt" inputmode="numeric" placeholder="Or type an amount (minimum K10)" oninput="calc()">
+  <div class="c">
+    <div class="l">You will receive about</div><div class="v" id="est">0.0 kWh</div>
+    <div class="n" id="rateNote"></div>
+  </div>
+  <div class="sec">Pay with</div>
+  <div id="methods"></div>
+  <button class="b" id="cont" onclick="toConfirm()" disabled>Continue</button>
+</div>
+
+<!-- CONFIRM -->
+<div class="s" id="confirm">
+  <button class="lk" onclick="go('buy')">‹ Back</button>
+  <h2>Confirm purchase</h2>
+  <div class="c" style="margin-top:20px" id="sum"></div>
+  <button class="b" id="pay" onclick="pay()"></button>
+  <p class="n">Payment is simulated. No money is taken.</p>
+</div>
+
+<!-- SUCCESS -->
+<div class="s" id="success">
+  <div class="tick">✓</div>
+  <h1 style="margin-top:8px">Purchase complete</h1>
+  <p class="sub" id="okMsg"></p>
+  <div class="c"><div class="l">Your token (enter on the meter)</div><div class="tok" id="okTok"></div><div class="n" id="okId"></div></div>
+  <button class="b" onclick="go('home')">Back to home</button>
+  <button class="b2" onclick="go('history')">View purchase history</button>
+</div>
+
+<!-- HISTORY -->
+<div class="s" id="history">
+  <button class="lk" onclick="go('home')">‹ Back</button>
+  <h2>Purchase history</h2>
+  <p class="small" id="histSum"></p>
+  <div id="histList"></div>
+</div>
+
+<!-- ACCOUNT -->
+<div class="s" id="account">
+  <button class="lk" onclick="go('home')">‹ Back</button>
+  <h2>My account</h2>
+  <div class="c" style="margin-top:20px" id="acctCard"></div>
+  <p class="n">To change these details, contact the power company.</p>
+</div>
+
+<script>
+// ---------- EXAMPLE DATA (replaced by a real server in Step 4) ----------
+var PRICE = 1.5; // kwacha per kWh, example rate
+var AMOUNTS = [50, 100, 200, 500];
+var METHODS = ['MTN Mobile Money', 'Airtel Money', 'Bank card'];
+var CUSTOMER = {name:'Sample Customer', phone:'097 000 0000', address:'Plot 12, Example Road, Lusaka', meter:'0123456789', tariff:'Residential'};
+var SAMPLE = [
+  {id:'P1004', date:'28 Oct 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', token:'4821 7305 9912 3347 0658'},
+  {id:'P1003', date:'14 Oct 2026', kwacha:100, units:66.7, method:'Airtel Money', token:'1190 6683 4027 5518 9034'},
+  {id:'P1002', date:'30 Sep 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', token:'7752 0146 3381 2269 8815'},
+  {id:'P1001', date:'15 Sep 2026', kwacha:50, units:33.3, method:'Bank card', token:'3306 9158 7724 0091 6642'}
+];
+
+// ---------- STATE (saved on the phone so history survives closing the app) ----------
+var account = '', units = 42.5, purchases = SAMPLE.slice(), order = {kwacha:0, units:0, method:METHODS[0]};
+try {
+  var saved = JSON.parse(localStorage.getItem('powerpay') || 'null');
+  if (saved) { units = saved.units; purchases = saved.purchases; }
+} catch (e) {}
+function save() { try { localStorage.setItem('powerpay', JSON.stringify({units:units, purchases:purchases})); } catch (e) {} }
+
+function $(id) { return document.getElementById(id); }
+function row(l, v) { return '<div class="r"><span class="l">' + l + '</span><b>' + v + '</b></div>'; }
+
+// ---------- NAVIGATION ----------
+function go(name) {
+  var all = document.querySelectorAll('.s');
+  for (var i = 0; i < all.length; i++) all[i].classList.remove('on');
+  $(name).classList.add('on');
+  window.scrollTo(0, 0);
+  if (name === 'home') renderHome();
+  if (name === 'buy') renderBuy();
+  if (name === 'history') renderHistory();
+  if (name === 'account') renderAccount();
+}
+function signIn() { account = $('acc').value.trim() || 'demo'; go('home'); }
+function signOut() { account = ''; $('acc').value = ''; $('pin').value = ''; go('login'); }
+
+// ---------- HOME ----------
+function renderHome() {
+  $('acctOut').textContent = account;
+  $('units').textContent = units.toFixed(1) + ' kWh';
+  $('meter1').textContent = CUSTOMER.meter;
+  var p = purchases[0];
+  $('last').textContent = p ? 'K' + p.kwacha + ' on ' + p.date : 'No purchases yet';
+}
+
+// ---------- BUY ----------
+function renderBuy() {
+  $('meter2').textContent = CUSTOMER.meter;
+  $('rateNote').textContent = 'Example rate: K' + PRICE.toFixed(2) + ' per kWh';
+  $('amt').value = '';
+  var c = '';
+  for (var i = 0; i < AMOUNTS.length; i++) c += '<button class="chip" onclick="pick(' + AMOUNTS[i] + ')">K' + AMOUNTS[i] + '</button>';
+  $('chips').innerHTML = c;
+  drawMethods();
+  calc();
+}
+function pick(a) { $('amt').value = a; calc(); }
+function drawMethods() {
+  var m = '';
+  for (var i = 0; i < METHODS.length; i++) {
+    m += '<button class="opt' + (order.method === METHODS[i] ? ' on' : '') + '" onclick="setMethod(' + i + ')"><span>' + METHODS[i] + '</span><i>' + (order.method === METHODS[i] ? '●' : '○') + '</i></button>';
+  }
+  $('methods').innerHTML = m;
+}
+function setMethod(i) { order.method = METHODS[i]; drawMethods(); }
+function calc() {
+  var k = parseFloat($('amt').value) || 0;
+  order.kwacha = k;
+  order.units = k / PRICE;
+  $('est').textContent = order.units.toFixed(1) + ' kWh';
+  $('cont').disabled = k < 10;
+  var chips = $('chips').children;
+  for (var i = 0; i < chips.length; i++) chips[i].className = 'chip' + (AMOUNTS[i] === k ? ' on' : '');
+}
+
+// ---------- CONFIRM, PAY ----------
+function toConfirm() {
+  $('sum').innerHTML = row('Meter', CUSTOMER.meter) + row('Amount', 'K' + order.kwacha.toFixed(2)) + row('Units', order.units.toFixed(1) + ' kWh') + row('Pay with', order.method);
+  $('pay').textContent = 'Pay K' + order.kwacha.toFixed(2);
+  go('confirm');
+}
+function fakeToken() {
+  var g = [];
+  for (var i = 0; i < 5; i++) g.push(String(Math.floor(1000 + Math.random() * 9000)));
+  return g.join(' ');
+}
+function today() {
+  var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], d = new Date();
+  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+}
+function pay() {
+  var p = {id:'P' + (1001 + purchases.length), date:today(), kwacha:order.kwacha, units:order.units, method:order.method, token:fakeToken()};
+  purchases.unshift(p);
+  units += order.units;
+  save();
+  $('okMsg').textContent = p.units.toFixed(1) + ' kWh added to meter ' + CUSTOMER.meter;
+  $('okTok').textContent = p.token;
+  $('okId').textContent = 'Receipt ' + p.id;
+  go('success');
+}
+
+// ---------- HISTORY ----------
+function renderHistory() {
+  var total = 0, h = '';
+  for (var i = 0; i < purchases.length; i++) {
+    var p = purchases[i];
+    total += p.kwacha;
+    h += '<div class="c"><button class="hist" onclick="toggle(' + i + ')"><div class="top"><div><div class="v2">K' + p.kwacha.toFixed(2) + '</div><div class="l">' + p.date + '</div></div><div class="u">' + p.units.toFixed(1) + ' kWh</div></div></button>' +
+         '<div class="det" id="d' + i + '" style="display:none">' + row('Receipt', p.id) + row('Paid with', p.method) + '<div class="l">Token</div><div class="v2" style="letter-spacing:1px">' + p.token + '</div></div></div>';
+  }
+  $('histSum').textContent = purchases.length + ' purchases, K' + total.toFixed(2) + ' in total';
+  $('histList').innerHTML = h;
+}
+function toggle(i) { var d = $('d' + i); d.style.display = d.style.display === 'none' ? 'block' : 'none'; }
+
+// ---------- ACCOUNT ----------
+function renderAccount() {
+  $('acctCard').innerHTML = row('Name', CUSTOMER.name) + row('Account number', account) + row('Phone', CUSTOMER.phone) + row('Meter number', CUSTOMER.meter) + row('Tariff', CUSTOMER.tariff) +
+    '<div class="l">Address</div><div class="v2">' + CUSTOMER.address + '</div>';
+}
+</script>
+</body>
+</html>
