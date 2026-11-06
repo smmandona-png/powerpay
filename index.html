@@ -13,7 +13,7 @@ h1{font-size:30px;text-align:center;margin:8px 0 4px}
 h2{font-size:24px;margin:12px 0 4px}
 .sub{color:#666;text-align:center;margin:0 0 28px}
 .small{color:#666;margin:0 0 18px}
-input{width:100%;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff}
+input{width:100%;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff;color:#17202b}
 button{font:inherit;cursor:pointer}
 .b{width:100%;background:#f5a623;color:#fff;border:0;border-radius:10px;padding:16px;font-size:18px;font-weight:600;margin-top:8px}
 .b:disabled{opacity:.4}
@@ -35,9 +35,10 @@ button{font:inherit;cursor:pointer}
 .opt i{color:#f5a623;font-style:normal}
 .sec{font-weight:600;margin:6px 0 8px}
 .tick{font-size:64px;text-align:center;color:#1f8a52;margin-top:30px}
+.cross{font-size:64px;text-align:center;color:#c0392b;margin-top:30px}
 .tok{font-size:22px;font-weight:700;letter-spacing:1px;margin-top:6px}
 .hist{width:100%;text-align:left;border:0;background:none;padding:0;display:block;font:inherit;color:inherit}
-.top{display:flex;justify-content:space-between;align-items:center}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .u{font-size:18px;font-weight:700;color:#1f8a52}
 .det{margin-top:14px;padding-top:14px;border-top:1px solid #eee}
 .bar{background:#17202b;color:#fff;padding:14px 24px;text-align:center}
@@ -46,40 +47,54 @@ button{font:inherit;cursor:pointer}
 .demo{background:#fff4dc;color:#7a5200;font-size:12px;text-align:center;padding:6px}
 .pulse{font-size:40px;text-align:center;margin:40px 0 10px;animation:p 1.2s infinite}
 @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
+.err{color:#c0392b;font-size:14px;margin:10px 0 0;min-height:20px}
+.ok{color:#1f8a52}
+.badge{font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px}
+.badge.pending{background:#fff4dc;color:#7a5200}
+.badge.failed{background:#eee;color:#666}
+.notice{background:#fff4dc;color:#7a5200;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px}
+.notice button{background:none;border:0;color:#7a5200;font-weight:700;text-decoration:underline;padding:0}
+.sm{width:auto;font-size:15px;padding:10px 16px;margin-top:10px}
 </style>
 </head>
 <body>
 
 <div class="bar"><b>Northwestern Energy Corporation</b><span>PowerPay customer app</span></div>
-<div class="demo">Demo version. Example data, no real payments.</div>
+<div class="demo">Test version. Simulated mobile money, no real payments.</div>
+
+<!-- LOADING -->
+<div class="s on" id="boot"><p class="sub" style="margin-top:80px">Loading…</p></div>
 
 <!-- LOGIN -->
-<div class="s on" id="login">
+<div class="s" id="login">
   <h1 style="margin-top:36px">⚡ PowerPay</h1>
   <p class="sub">Sign in to your account</p>
-  <input id="acc" inputmode="numeric" placeholder="Account number">
-  <input id="pin" type="password" inputmode="numeric" placeholder="PIN">
-  <button class="b" onclick="signIn()">Sign in</button>
+  <input id="acc" inputmode="numeric" placeholder="Account number" autocomplete="off">
+  <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off">
+  <button class="b" id="loginBtn" onclick="signIn()">Sign in</button>
+  <p class="err" id="loginErr" role="status"></p>
 </div>
 
 <!-- HOME -->
 <div class="s" id="home">
-  <h2>Hello, Sample Customer</h2>
+  <h2 id="hName"></h2>
   <p class="small">Account: <span id="acctOut"></span></p>
+  <div id="pendingNote"></div>
   <div class="c"><div class="l">Units remaining</div><div class="v" id="units"></div></div>
   <div class="c">
     <div class="l">Meter number</div><div class="v2" id="meter1"></div>
     <div class="l" style="margin-top:12px">Last purchase</div><div class="v2" id="last"></div>
   </div>
-  <button class="b" onclick="go('buy')">Buy power</button>
-  <button class="b2" onclick="go('history')">Purchase history</button>
-  <button class="b2" onclick="go('account')">My account</button>
+  <button class="b" onclick="nav('buy')">Buy power</button>
+  <button class="b2" onclick="nav('history')">Purchase history</button>
+  <button class="b2" onclick="nav('account')">My account</button>
   <button class="lk out" onclick="signOut()">Sign out</button>
+  <p class="err" id="homeErr" role="status"></p>
 </div>
 
 <!-- BUY -->
 <div class="s" id="buy">
-  <button class="lk" onclick="go('home')">‹ Back</button>
+  <button class="lk" onclick="nav('home')">‹ Back</button>
   <h2>Buy power</h2>
   <p class="small">Meter <span id="meter2"></span></p>
   <div class="sec">Amount (kwacha)</div>
@@ -98,11 +113,12 @@ button{font:inherit;cursor:pointer}
 
 <!-- CONFIRM -->
 <div class="s" id="confirm">
-  <button class="lk" onclick="go('buy')">‹ Back</button>
+  <button class="lk" onclick="nav('buy')">‹ Back</button>
   <h2>Confirm purchase</h2>
   <div class="c" style="margin-top:20px" id="sum"></div>
   <button class="b" id="pay" onclick="pay()"></button>
-  <p class="n">Demo only. No money is taken.</p>
+  <p class="err" id="payErr" role="status"></p>
+  <p class="n">Test version. No money is taken.</p>
 </div>
 
 <!-- WAITING FOR APPROVAL -->
@@ -110,7 +126,9 @@ button{font:inherit;cursor:pointer}
   <div class="pulse">📱</div>
   <h1>Check your phone</h1>
   <p class="sub" id="waitMsg"></p>
-  <p class="n" style="text-align:center">Waiting for approval. In the real app this step waits for the network to confirm.</p>
+  <p class="n" style="text-align:center" id="waitNote">Waiting for the network to confirm.</p>
+  <button class="b2" onclick="leaveWait()">Back to home</button>
+  <p class="n" style="text-align:center">If you leave, the payment stays in your purchase history.</p>
 </div>
 
 <!-- SUCCESS -->
@@ -119,80 +137,146 @@ button{font:inherit;cursor:pointer}
   <h1 style="margin-top:8px">Purchase complete</h1>
   <p class="sub" id="okMsg"></p>
   <div class="c"><div class="l">Your token (enter on the meter)</div><div class="tok" id="okTok"></div><div class="n" id="okId"></div></div>
-  <button class="b" onclick="go('home')">Back to home</button>
-  <button class="b2" onclick="go('history')">View purchase history</button>
+  <button class="b" onclick="nav('home')">Back to home</button>
+  <button class="b2" onclick="nav('history')">View purchase history</button>
+</div>
+
+<!-- FAILED -->
+<div class="s" id="failed">
+  <div class="cross">✕</div>
+  <h1 style="margin-top:8px">Payment not completed</h1>
+  <p class="sub">The network did not approve this payment. No units were added.</p>
+  <button class="b" onclick="nav('buy')">Try again</button>
+  <button class="b2" onclick="nav('home')">Back to home</button>
 </div>
 
 <!-- HISTORY -->
 <div class="s" id="history">
-  <button class="lk" onclick="go('home')">‹ Back</button>
+  <button class="lk" onclick="nav('home')">‹ Back</button>
   <h2>Purchase history</h2>
   <p class="small" id="histSum"></p>
   <div id="histList"></div>
+  <p class="err" id="histErr" role="status"></p>
 </div>
 
 <!-- ACCOUNT -->
 <div class="s" id="account">
-  <button class="lk" onclick="go('home')">‹ Back</button>
+  <button class="lk" onclick="nav('home')">‹ Back</button>
   <h2>My account</h2>
   <div class="c" style="margin-top:20px" id="acctCard"></div>
   <p class="n">To change these details, contact Northwestern Energy Corporation.</p>
 </div>
 
 <script>
-// ---------- EXAMPLE DATA (replaced by a real server later) ----------
-var PRICE = 1.5; // kwacha per kWh, example rate
+// ---------- SERVER CONNECTION ----------
+// The URL and the publishable key are public by design. Never put the secret key here.
+var SUPABASE_URL = 'https://ffoeovporlcoyzrepwap.supabase.co';
+var SUPABASE_KEY = 'sb_publishable_1sIO-2_UqAgrKCJ0pRHclw_WOtUzP46';
+
 var AMOUNTS = [50, 100, 200, 500];
 var METHODS = ['MTN Mobile Money', 'Airtel Money', 'Zamtel Kwacha'];
-var CUSTOMER = {name:'Sample Customer', phone:'097 000 0000', address:'Plot 12, Example Road, Lusaka', meter:'0123456789', tariff:'Residential'};
-var SAMPLE = [
-  {id:'P1004', date:'28 Oct 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', phone:'096 *** 1234', token:'4821 7305 9912 3347 0658'},
-  {id:'P1003', date:'14 Oct 2026', kwacha:100, units:66.7, method:'Airtel Money', phone:'097 *** 5678', token:'1190 6683 4027 5518 9034'},
-  {id:'P1002', date:'30 Sep 2026', kwacha:200, units:133.3, method:'MTN Mobile Money', phone:'096 *** 1234', token:'7752 0146 3381 2269 8815'},
-  {id:'P1001', date:'15 Sep 2026', kwacha:50, units:33.3, method:'Zamtel Kwacha', phone:'095 *** 9012', token:'3306 9158 7724 0091 6642'}
-];
 
-// ---------- STATE (saved on the phone so history survives closing the app) ----------
-var account = '', units = 42.5, purchases = SAMPLE.slice(), order = {kwacha:0, units:0, method:METHODS[0], phone:''};
-try {
-  var saved = JSON.parse(localStorage.getItem('powerpay2') || 'null');
-  if (saved) { units = saved.units; purchases = saved.purchases; }
-} catch (e) {}
-function save() { try { localStorage.setItem('powerpay2', JSON.stringify({units:units, purchases:purchases})); } catch (e) {} }
+var session = null, me = null, current = 'boot', pollTimer = null, pollToken = 0;
+var order = {kwacha:0, units:0, method:METHODS[0], phone:''};
 
 function $(id) { return document.getElementById(id); }
-function row(l, v) { return '<div class="r"><span class="l">' + l + '</span><b>' + v + '</b></div>'; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+function row(l, v) { return '<div class="r"><span class="l">' + esc(l) + '</span><b>' + esc(v) + '</b></div>'; }
 function digits(s) { return s.replace(/\D/g, ''); }
 function maskPhone(d) { return d.slice(0, 3) + ' *** ' + d.slice(-4); }
+function setText(id, t, good) { var e = $(id); e.textContent = t || ''; e.className = 'err' + (good ? ' ok' : ''); }
+function fmtDate(iso) {
+  var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], d = new Date(iso);
+  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+}
+function store(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+function rpc(name, body) {
+  return fetch(SUPABASE_URL + '/rest/v1/rpc/' + name, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json', 'apikey': SUPABASE_KEY},
+    body: JSON.stringify(body || {})
+  }).then(function (r) {
+    return r.json().catch(function () { return null; }).then(function (j) {
+      if (!r.ok) { var e = new Error((j && j.message) || 'Something went wrong. Try again.'); e.fromServer = true; throw e; }
+      return j;
+    });
+  }, function () {
+    throw new Error('No connection. Check your internet and try again.');
+  });
+}
+
+function loadMe() { return rpc('app_me', {p_session: session}).then(function (m) { me = m; return m; }); }
+
+// A request failed. If the session ran out, go back to sign-in.
+function failed(e, errId) {
+  if (e.message === 'Please sign in again.') { endSession(); show('login'); setText('loginErr', e.message); return; }
+  setText(errId, e.message);
+}
+function endSession() { session = null; me = null; store('pp_session', null); }
 
 // ---------- NAVIGATION ----------
-function go(name) {
+function show(name) {
+  if (name !== 'wait') stopPolling();
   var all = document.querySelectorAll('.s');
   for (var i = 0; i < all.length; i++) all[i].classList.remove('on');
   $(name).classList.add('on');
+  current = name;
   window.scrollTo(0, 0);
   if (name === 'home') renderHome();
   if (name === 'buy') renderBuy();
   if (name === 'history') renderHistory();
   if (name === 'account') renderAccount();
 }
-function signIn() { account = $('acc').value.trim() || 'demo'; go('home'); }
-function signOut() { account = ''; $('acc').value = ''; $('pin').value = ''; go('login'); }
+// Go to a screen that shows server data: show what we have, then refresh it.
+function nav(name) {
+  show(name);
+  if ((name === 'home' || name === 'history' || name === 'account') && session) {
+    loadMe().then(function () { if (current === name) show(name); }, function (e) { failed(e, name === 'history' ? 'histErr' : 'homeErr'); });
+  }
+}
+
+// ---------- SIGN IN / OUT ----------
+function signIn() {
+  var a = $('acc').value.trim(), p = $('pin').value;
+  if (!a || !p) { setText('loginErr', 'Enter your account number and PIN.'); return; }
+  $('loginBtn').disabled = true;
+  setText('loginErr', 'Signing in…', true);
+  rpc('app_login', {p_account: a, p_pin: p}).then(function (r) {
+    if (r.error) { setText('loginErr', r.error); return; }
+    session = r.session; store('pp_session', session);
+    $('pin').value = '';
+    return loadMe().then(function () { setText('loginErr', ''); show('home'); });
+  }).catch(function (e) { setText('loginErr', e.message); }).then(function () { $('loginBtn').disabled = false; });
+}
+function signOut() {
+  var s = session;
+  endSession(); $('acc').value = ''; $('pin').value = ''; setText('loginErr', '');
+  show('login');
+  if (s) rpc('app_logout', {p_session: s}).catch(function () {});
+}
 
 // ---------- HOME ----------
+function paidOrders() { return (me ? me.orders : []).filter(function (o) { return o.status === 'paid'; }); }
 function renderHome() {
-  $('acctOut').textContent = account;
-  $('units').textContent = units.toFixed(1) + ' kWh';
-  $('meter1').textContent = CUSTOMER.meter;
-  var p = purchases[0];
-  $('last').textContent = p ? 'K' + p.kwacha + ' on ' + p.date : 'No purchases yet';
+  if (!me) return;
+  $('hName').textContent = 'Hello, ' + me.name;
+  $('acctOut').textContent = me.account;
+  $('units').textContent = Number(me.units).toFixed(1) + ' kWh';
+  $('meter1').textContent = me.meter;
+  var p = paidOrders()[0];
+  $('last').textContent = p ? 'K' + Number(p.kwacha) + ' on ' + fmtDate(p.date) : 'No purchases yet';
+  var pend = me.orders.filter(function (o) { return o.status === 'pending'; }).length;
+  $('pendingNote').innerHTML = pend ? '<div class="notice">' + pend + (pend === 1 ? ' payment is' : ' payments are') + ' waiting for confirmation. <button onclick="nav(\'history\')">Check</button></div>' : '';
 }
 
 // ---------- BUY ----------
 function renderBuy() {
-  $('meter2').textContent = CUSTOMER.meter;
-  $('rateNote').textContent = 'Example rate: K' + PRICE.toFixed(2) + ' per kWh';
-  $('amt').value = '';
+  if (!me) return;
+  $('meter2').textContent = me.meter;
+  $('rateNote').textContent = 'Rate: K' + Number(me.price).toFixed(2) + ' per kWh';
+  $('amt').value = ''; $('phone').value = '';
   var c = '';
   for (var i = 0; i < AMOUNTS.length; i++) c += '<button class="chip" onclick="pick(' + AMOUNTS[i] + ')">K' + AMOUNTS[i] + '</button>';
   $('chips').innerHTML = c;
@@ -211,64 +295,108 @@ function setMethod(i) { order.method = METHODS[i]; drawMethods(); }
 function calc() {
   var k = parseFloat($('amt').value) || 0;
   order.kwacha = k;
-  order.units = k / PRICE;
+  order.units = me ? Math.round(k / Number(me.price) * 10) / 10 : 0;
   order.phone = digits($('phone').value);
   $('est').textContent = order.units.toFixed(1) + ' kWh';
-  $('cont').disabled = !(k >= 10 && order.phone.length === 10);
+  $('cont').disabled = !(k >= 10 && k <= 10000 && order.phone.length === 10);
   var chips = $('chips').children;
   for (var i = 0; i < chips.length; i++) chips[i].className = 'chip' + (AMOUNTS[i] === k ? ' on' : '');
 }
 
-// ---------- CONFIRM, WAIT, PAY ----------
+// ---------- CONFIRM, WAIT, RESULT ----------
 function toConfirm() {
-  $('sum').innerHTML = row('Meter', CUSTOMER.meter) + row('Amount', 'K' + order.kwacha.toFixed(2)) + row('Units', order.units.toFixed(1) + ' kWh') + row('Pay with', order.method) + row('Number', maskPhone(order.phone));
+  $('sum').innerHTML = row('Meter', me.meter) + row('Amount', 'K' + order.kwacha.toFixed(2)) + row('Units', order.units.toFixed(1) + ' kWh') + row('Pay with', order.method) + row('Number', maskPhone(order.phone));
   $('pay').textContent = 'Pay K' + order.kwacha.toFixed(2);
-  go('confirm');
-}
-function fakeToken() {
-  var g = [];
-  for (var i = 0; i < 5; i++) g.push(String(Math.floor(1000 + Math.random() * 9000)));
-  return g.join(' ');
-}
-function today() {
-  var m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], d = new Date();
-  return d.getDate() + ' ' + m[d.getMonth()] + ' ' + d.getFullYear();
+  $('pay').disabled = false;
+  setText('payErr', '');
+  show('confirm');
 }
 function pay() {
-  $('waitMsg').textContent = 'Approve the K' + order.kwacha.toFixed(2) + ' payment on ' + maskPhone(order.phone) + ' with your ' + order.method + ' PIN.';
-  go('wait');
-  setTimeout(finish, 3000);
+  $('pay').disabled = true;
+  setText('payErr', 'Starting payment…', true);
+  rpc('app_start_payment', {p_session: session, p_kwacha: order.kwacha, p_network: order.method, p_phone: order.phone}).then(function (o) {
+    $('waitMsg').textContent = 'Approve the K' + order.kwacha.toFixed(2) + ' payment on ' + maskPhone(order.phone) + ' with your ' + order.method + ' PIN.';
+    $('waitNote').textContent = 'Waiting for the network to confirm.';
+    show('wait');
+    startPolling(o.id);
+  }).catch(function (e) { $('pay').disabled = false; failed(e, 'payErr'); });
 }
-function finish() {
-  var p = {id:'P' + (1001 + purchases.length), date:today(), kwacha:order.kwacha, units:order.units, method:order.method, phone:maskPhone(order.phone), token:fakeToken()};
-  purchases.unshift(p);
-  units += order.units;
-  save();
-  $('okMsg').textContent = p.units.toFixed(1) + ' kWh added to meter ' + CUSTOMER.meter;
-  $('okTok').textContent = p.token;
-  $('okId').textContent = 'Receipt ' + p.id;
-  go('success');
+function stopPolling() { pollToken++; clearTimeout(pollTimer); }
+function leaveWait() { nav('home'); }
+function startPolling(id) {
+  stopPolling();
+  var mine = pollToken, tries = 0;
+  function tick() {
+    if (mine !== pollToken) return;
+    tries++;
+    rpc('app_check_payment', {p_session: session, p_order: id}).then(function (r) {
+      if (mine !== pollToken) return;
+      if (r.status === 'paid') { if (me) me.units = r.units_now; showSuccess(r); }
+      else if (r.status === 'failed') { show('failed'); }
+      else if (tries > 100) { $('waitNote').textContent = 'Still waiting. You can leave. The payment is in your purchase history.'; }
+      else { pollTimer = setTimeout(tick, 2000); }
+    }, function (e) {
+      if (mine !== pollToken) return;
+      if (e.fromServer) { failed(e, 'homeErr'); return; }
+      $('waitNote').textContent = 'No connection. Still trying…';
+      pollTimer = setTimeout(tick, 3000);
+    });
+  }
+  pollTimer = setTimeout(tick, 1500);
+}
+function showSuccess(r) {
+  $('okMsg').textContent = Number(r.units).toFixed(1) + ' kWh added to meter ' + (me ? me.meter : '');
+  $('okTok').textContent = r.token;
+  $('okId').textContent = 'Receipt ' + r.receipt;
+  show('success');
 }
 
 // ---------- HISTORY ----------
 function renderHistory() {
-  var total = 0, h = '';
-  for (var i = 0; i < purchases.length; i++) {
-    var p = purchases[i];
-    total += p.kwacha;
-    h += '<div class="c"><button class="hist" onclick="toggle(' + i + ')"><div class="top"><div><div class="v2">K' + p.kwacha.toFixed(2) + '</div><div class="l">' + p.date + '</div></div><div class="u">' + p.units.toFixed(1) + ' kWh</div></div></button>' +
-         '<div class="det" id="d' + i + '" style="display:none">' + row('Receipt', p.id) + row('Paid with', p.method) + row('Number', p.phone || '') + '<div class="l">Token</div><div class="v2" style="letter-spacing:1px">' + p.token + '</div></div></div>';
+  if (!me) return;
+  var list = me.orders, total = 0, paid = 0, h = '';
+  for (var i = 0; i < list.length; i++) {
+    var p = list[i];
+    if (p.status === 'paid') { total += Number(p.kwacha); paid++; }
+    var right = p.status === 'paid' ? '<div class="u">' + Number(p.units).toFixed(1) + ' kWh</div>' : '<span class="badge ' + p.status + '">' + (p.status === 'pending' ? 'Pending' : 'Failed') + '</span>';
+    var det = row('Receipt', p.receipt) + row('Paid with', p.network) + row('Number', p.phone);
+    if (p.status === 'paid') det += '<div class="l">Token</div><div class="v2" style="letter-spacing:1px">' + esc(p.token) + '</div><button class="b2 sm" id="cp' + i + '" onclick="copyTok(' + i + ')">Copy token</button>';
+    if (p.status === 'pending') det += '<button class="b2 sm" onclick="checkNow(' + p.id + ')">Check now</button>';
+    h += '<div class="c"><button class="hist" onclick="toggle(' + i + ')"><div class="top"><div><div class="v2">K' + Number(p.kwacha).toFixed(2) + '</div><div class="l">' + esc(fmtDate(p.date)) + '</div></div>' + right + '</div></button>' +
+         '<div class="det" id="d' + i + '" style="display:none">' + det + '</div></div>';
   }
-  $('histSum').textContent = purchases.length + ' purchases, K' + total.toFixed(2) + ' in total';
-  $('histList').innerHTML = h;
+  $('histSum').textContent = paid + (paid === 1 ? ' purchase' : ' purchases') + ', K' + total.toFixed(2) + ' in total';
+  $('histList').innerHTML = h || '<p class="n">No purchases yet.</p>';
 }
 function toggle(i) { var d = $('d' + i); d.style.display = d.style.display === 'none' ? 'block' : 'none'; }
+function copyTok(i) {
+  var t = me.orders[i].token, b = $('cp' + i);
+  function done() { b.textContent = 'Copied'; }
+  function fb() { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { b.textContent = 'Press and hold the token to copy'; } document.body.removeChild(ta); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+}
+function checkNow(id) {
+  setText('histErr', 'Checking…', true);
+  rpc('app_check_payment', {p_session: session, p_order: id}).then(function () { return loadMe(); })
+    .then(function () { setText('histErr', ''); show('history'); }, function (e) { failed(e, 'histErr'); });
+}
 
 // ---------- ACCOUNT ----------
 function renderAccount() {
-  $('acctCard').innerHTML = row('Name', CUSTOMER.name) + row('Account number', account) + row('Phone', CUSTOMER.phone) + row('Meter number', CUSTOMER.meter) + row('Tariff', CUSTOMER.tariff) +
-    '<div class="l">Address</div><div class="v2">' + CUSTOMER.address + '</div>';
+  if (!me) return;
+  $('acctCard').innerHTML = row('Name', me.name) + row('Account number', me.account) + row('Phone', me.phone) + row('Meter number', me.meter) + row('Tariff', me.tariff) +
+    '<div class="l">Address</div><div class="v2">' + esc(me.address) + '</div>';
 }
+
+// ---------- START ----------
+(function start() {
+  session = load('pp_session');
+  if (!session) { show('login'); return; }
+  loadMe().then(function () { show('home'); }, function (e) {
+    if (e.fromServer) { endSession(); show('login'); }
+    else { show('login'); setText('loginErr', e.message); }
+  });
+})();
 </script>
 </body>
 </html>
