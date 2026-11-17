@@ -1,5 +1,10 @@
 {
   "appId": "com.powerpay.app",
   "appName": "PowerPay",
-  "webDir": "www"
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
 }
