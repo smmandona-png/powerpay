@@ -55,6 +55,20 @@ button{font:inherit;cursor:pointer}
 .notice{background:#fff4dc;color:#7a5200;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px}
 .notice button{background:none;border:0;color:#7a5200;font-weight:700;text-decoration:underline;padding:0}
 .sm{width:auto;font-size:15px;padding:10px 16px;margin-top:10px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.tile{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px;text-align:left;color:#17202b;display:flex;flex-direction:column;gap:4px;min-height:112px}
+.tile i{font-style:normal;font-size:26px}
+.tile b{font-size:16px}
+.tile span{font-size:12px;color:#888}
+.tile.off{opacity:.6}
+.tile.wide{grid-column:1/-1;min-height:0}
+textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff;color:#17202b;min-height:90px}
+.warn{background:#fdecea;color:#8a1f14;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px}
+.tag{background:#fff4dc;color:#7a5200;font-size:12px;border-radius:8px;padding:6px 10px;margin-bottom:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#f5a623;margin-right:8px}
+.dot.done{background:#1f8a52}
+.mini{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:15px}
+.mini:last-child{border-bottom:0}
 </style>
 </head>
 <body>
@@ -87,9 +101,18 @@ button{font:inherit;cursor:pointer}
     <div class="l">Meter number</div><div class="v2" id="meter1"></div>
     <div class="l" style="margin-top:12px">Last purchase</div><div class="v2" id="last"></div>
   </div>
-  <button class="b" onclick="nav('buy')">Buy power</button>
+  <div class="grid">
+    <button class="tile" onclick="nav('buy')"><i>⚡</i><b>Buy electricity</b><span>Get a token for your meter</span></button>
+    <button class="tile off" onclick="show('postpaid')"><i>🧾</i><b>Postpaid bill</b><span>Coming in the next update</span></button>
+    <button class="tile" onclick="show('fault')"><i>🛠️</i><b>Report a fault</b><span>No supply, low voltage and more</span></button>
+    <button class="tile" onclick="show('track')"><i>🔎</i><b>Track a fault</b><span>See how it is going</span></button>
+    <button class="tile wide" onclick="nav('lastScreen')"><i>🕘</i><b>Last purchase</b><span>Get your last token again</span></button>
+  </div>
+  <div class="sec">Recent purchases</div>
+  <div class="c" id="recent"></div>
   <button class="b2" onclick="nav('history')">Purchase history</button>
   <button class="b2" onclick="nav('account')">My account</button>
+  <div class="c" style="margin-top:14px"><div class="l">Customer support</div><div class="n" style="font-size:14px;color:#17202b;margin-top:4px">Contact details will be added here by Northwestern Energy Corporation.</div></div>
   <button class="lk out" onclick="signOut()">Sign out</button>
   <p class="err" id="homeErr" role="status"></p>
 </div>
@@ -97,7 +120,7 @@ button{font:inherit;cursor:pointer}
 <!-- BUY -->
 <div class="s" id="buy">
   <button class="lk" onclick="nav('home')">‹ Back</button>
-  <h2>Buy power</h2>
+  <h2>Buy electricity</h2>
   <p class="small">Meter <span id="meter2"></span></p>
   <div class="sec">Amount (kwacha)</div>
   <div class="chips" id="chips"></div>
@@ -167,6 +190,76 @@ button{font:inherit;cursor:pointer}
   <h2>My account</h2>
   <div class="c" style="margin-top:20px" id="acctCard"></div>
   <p class="n">To change these details, contact Northwestern Energy Corporation.</p>
+</div>
+
+<!-- LAST PURCHASE -->
+<div class="s" id="lastScreen">
+  <button class="lk" onclick="nav('home')">‹ Back</button>
+  <h2>Last purchase</h2>
+  <div id="lastBody"></div>
+</div>
+
+<!-- POSTPAID (not built yet) -->
+<div class="s" id="postpaid">
+  <button class="lk" onclick="show('home')">‹ Back</button>
+  <h2>Postpaid bill</h2>
+  <div class="c"><div class="v2">Not available in this version</div>
+  <p class="n" style="font-size:14px;color:#17202b">Showing a postpaid balance needs access to Northwestern Energy Corporation's billing system. This screen will be added in the next update.</p></div>
+</div>
+
+<!-- REPORT A FAULT -->
+<div class="s" id="fault">
+  <button class="lk" onclick="show('home')">‹ Back</button>
+  <h2>Report a fault</h2>
+  <div class="tag">Demonstration. Saved on this phone only. Not sent to NWEC.</div>
+  <div class="sec">What is the problem?</div>
+  <div id="faultCats"></div>
+  <div id="fireWarn"></div>
+  <div class="sec">Your name</div>
+  <input id="fName" autocomplete="off">
+  <div class="sec">Phone number</div>
+  <input id="fPhone" inputmode="numeric" placeholder="e.g. 097 123 4567" autocomplete="off">
+  <div class="sec">Meter or account number (if it applies)</div>
+  <input id="fMeter" inputmode="numeric" autocomplete="off">
+  <div class="sec">Where is the fault?</div>
+  <input id="fLoc" placeholder="Street, area or landmark" autocomplete="off">
+  <div class="sec">More detail (optional)</div>
+  <textarea id="fDesc" placeholder="Tell us what you see or hear"></textarea>
+  <button class="b" onclick="faultReview()">Review</button>
+  <p class="err" id="faultErr" role="status"></p>
+</div>
+
+<div class="s" id="faultReview">
+  <button class="lk" onclick="show('fault')">‹ Edit</button>
+  <h2>Check your report</h2>
+  <div id="fireWarn2"></div>
+  <div class="c" id="faultSum"></div>
+  <button class="b" id="faultSend" onclick="faultSubmit()">Submit report</button>
+  <p class="n">Demonstration. This report is saved on this phone only. It is not sent to NWEC.</p>
+</div>
+
+<div class="s" id="faultDone">
+  <div class="tick">✓</div>
+  <h1 style="margin-top:8px">Fault reported</h1>
+  <p class="sub">Keep this reference number to follow up.</p>
+  <div class="c"><div class="l">Fault reference</div><div class="tok" id="doneRef"></div></div>
+  <div id="fireWarn3"></div>
+  <div class="tag">Demonstration. Saved on this phone only. Not sent to NWEC.</div>
+  <button class="b" onclick="trackRef(lastFaultRef)">Track this fault</button>
+  <button class="b2" onclick="show('home')">Back to home</button>
+</div>
+
+<!-- TRACK A FAULT -->
+<div class="s" id="track">
+  <button class="lk" onclick="show('home')">‹ Back</button>
+  <h2>Track a fault</h2>
+  <div class="tag">Demonstration. The status shown is simulated by the app. It is not a real NWEC update.</div>
+  <input id="tRef" placeholder="Fault reference, e.g. F-ABC123" autocomplete="off" autocapitalize="characters">
+  <button class="b" onclick="trackRef($('tRef').value)">Check status</button>
+  <p class="err" id="trackErr" role="status"></p>
+  <div id="trackBody"></div>
+  <div class="sec" style="margin-top:18px">Faults reported on this phone</div>
+  <div id="trackList"></div>
 </div>
 
 <script>
@@ -292,7 +385,7 @@ function startDemo() {
   loadMe().then(function () { show('home'); });
 }
 function resetDemo() {
-  demoMem = demoSeed(); demoSave();
+  demoMem = demoSeed(); demoSave(); store('pp_faults', null);
   setText('loginErr', 'Demo data is back to how it started.', true);
 }
 
@@ -317,11 +410,14 @@ function show(name) {
   if (name === 'buy') renderBuy();
   if (name === 'history') renderHistory();
   if (name === 'account') renderAccount();
+  if (name === 'lastScreen') renderLast();
+  if (name === 'fault') renderFault();
+  if (name === 'track') renderTrack();
 }
 // Go to a screen that shows server data: show what we have, then refresh it.
 function nav(name) {
   show(name);
-  if ((name === 'home' || name === 'history' || name === 'account') && session) {
+  if ((name === 'home' || name === 'history' || name === 'account' || name === 'lastScreen') && session) {
     loadMe().then(function () { if (current === name) show(name); }, function (e) { failed(e, name === 'history' ? 'histErr' : 'homeErr'); });
   }
 }
@@ -357,6 +453,12 @@ function renderHome() {
   var p = paidOrders()[0];
   $('last').textContent = p ? 'K' + Number(p.kwacha) + ' on ' + fmtDate(p.date) : 'No purchases yet';
   var pend = me.orders.filter(function (o) { return o.status === 'pending'; }).length;
+  var rec = me.orders.slice(0, 3), rh = '';
+  for (var i = 0; i < rec.length; i++) {
+    var r = rec[i], st = r.status === 'paid' ? Number(r.units).toFixed(1) + ' kWh' : (r.status === 'pending' ? 'Pending' : 'Failed');
+    rh += '<div class="mini"><span>K' + Number(r.kwacha) + ' · ' + esc(fmtDate(r.date)) + '</span><b>' + st + '</b></div>';
+  }
+  $('recent').innerHTML = rh || '<div class="n">No purchases yet.</div>';
   $('pendingNote').innerHTML = pend ? '<div class="notice">' + pend + (pend === 1 ? ' payment is' : ' payments are') + ' waiting for confirmation. <button onclick="nav(\'history\')">Check</button></div>' : '';
 }
 
@@ -468,6 +570,108 @@ function checkNow(id) {
   setText('histErr', 'Checking…', true);
   rpc('app_check_payment', {p_session: session, p_order: id}).then(function () { return loadMe(); })
     .then(function () { setText('histErr', ''); show('history'); }, function (e) { failed(e, 'histErr'); });
+}
+
+// ---------- LAST PURCHASE ----------
+function fmtDT(iso) {
+  var d = new Date(iso), h = d.getHours(), m = d.getMinutes();
+  return fmtDate(iso) + ', ' + (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+}
+function copyText(t, b, label) {
+  function done() { if (b) b.textContent = 'Copied'; }
+  function fb() { var ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); done(); } catch (e) { if (b) b.textContent = 'Press and hold to copy'; } document.body.removeChild(ta); }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, fb); else fb();
+}
+function shareText(t, b) {
+  if (navigator.share) navigator.share({text: t}).catch(function () {});
+  else copyText(t, b);
+}
+function renderLast() {
+  if (!me) return;
+  var p = paidOrders()[0];
+  if (!p) { $('lastBody').innerHTML = '<div class="c"><div class="v2">No purchase found</div><p class="n" style="font-size:14px;color:#17202b">When you buy electricity, your latest token will appear here.</p></div>'; return; }
+  $('lastBody').innerHTML = '<div class="c"><div class="l">Token (enter on the meter)</div><div class="tok" id="lastTok">' + esc(p.token) + '</div></div>' +
+    '<div class="c">' + row('Meter', me.meter) + row('Amount paid', 'K' + Number(p.kwacha).toFixed(2)) + row('Units', Number(p.units).toFixed(1) + ' kWh') + row('Date and time', fmtDT(p.date)) + row('Reference', p.receipt) + '</div>' +
+    '<button class="b" id="lastCopy" onclick="copyText(\'' + esc(p.token) + '\', $(\'lastCopy\'))">Copy token</button>' +
+    '<button class="b2" id="lastShare" onclick="shareText(\'PowerPay token for meter ' + esc(me.meter) + ': ' + esc(p.token) + '\', $(\'lastShare\'))">Share token</button>';
+}
+
+// ---------- FAULTS (demonstration: kept on this phone, not sent anywhere) ----------
+var FAULT_CATS = ['No supply', 'Unsuccessful token generation', 'Faulty prepaid meter', 'Low voltage', 'High voltage', 'Fire or explosion'];
+var FIRE = 'Fire or explosion';
+var faultCat = null, lastFaultRef = null;
+function loadFaults() { try { return JSON.parse(load('pp_faults') || '[]'); } catch (e) { return []; } }
+function saveFaults(a) { store('pp_faults', JSON.stringify(a)); }
+function fireBox() {
+  return '<div class="warn"><b>Danger. Keep yourself and others away.</b><br>Do not touch wires, poles or equipment. Stay well back. Call emergency services now: 112 or 999.</div>';
+}
+function drawCats() {
+  var h = '';
+  for (var i = 0; i < FAULT_CATS.length; i++) h += '<button class="opt' + (faultCat === FAULT_CATS[i] ? ' on' : '') + '" onclick="setCat(' + i + ')"><span>' + FAULT_CATS[i] + '</span><i>' + (faultCat === FAULT_CATS[i] ? '●' : '○') + '</i></button>';
+  $('faultCats').innerHTML = h;
+  $('fireWarn').innerHTML = faultCat === FIRE ? fireBox() : '';
+}
+function setCat(i) { faultCat = FAULT_CATS[i]; drawCats(); }
+function renderFault() {
+  faultCat = null; drawCats(); setText('faultErr', '');
+  $('fName').value = me ? me.name : ''; $('fPhone').value = me ? digits(me.phone) : '';
+  $('fMeter').value = me ? me.meter : ''; $('fLoc').value = me ? me.address : ''; $('fDesc').value = '';
+}
+var faultDraft = null;
+function faultReview() {
+  var d = {cat: faultCat, name: $('fName').value.trim(), phone: digits($('fPhone').value), meter: digits($('fMeter').value), loc: $('fLoc').value.trim(), desc: $('fDesc').value.trim()};
+  if (!d.cat) { setText('faultErr', 'Choose what the problem is.'); return; }
+  if (!d.name) { setText('faultErr', 'Enter your name.'); return; }
+  if (d.phone.length !== 10) { setText('faultErr', 'Enter a 10-digit phone number.'); return; }
+  if (!d.loc) { setText('faultErr', 'Tell us where the fault is.'); return; }
+  faultDraft = d;
+  $('faultSum').innerHTML = row('Problem', d.cat) + row('Name', d.name) + row('Phone', d.phone) + (d.meter ? row('Meter or account', d.meter) : '') + row('Location', d.loc) + (d.desc ? '<div class="l">Details</div><div class="v2">' + esc(d.desc) + '</div>' : '');
+  $('fireWarn2').innerHTML = d.cat === FIRE ? fireBox() : '';
+  $('faultSend').disabled = false;
+  show('faultReview');
+}
+function newRef(list) {
+  var A = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', r;
+  do { r = 'F-'; for (var i = 0; i < 6; i++) r += A.charAt(Math.floor(Math.random() * A.length)); }
+  while (list.some(function (f) { return f.ref === r; }));
+  return r;
+}
+function faultSubmit() {
+  if (!faultDraft) return;
+  $('faultSend').disabled = true;
+  var list = loadFaults(), f = faultDraft;
+  f.ref = newRef(list); f.created = Date.now(); faultDraft = null;
+  list.unshift(f); saveFaults(list);
+  lastFaultRef = f.ref;
+  $('doneRef').textContent = f.ref;
+  $('fireWarn3').innerHTML = f.cat === FIRE ? fireBox() : '';
+  show('faultDone');
+}
+var STEPS = [[0, 'Reported', 'Pending'], [60000, 'Assigned to a team', 'Assigned'], [180000, 'Team is attending', 'Being attended to'], [360000, 'Marked resolved', 'Resolved']];
+function faultStatus(f) {
+  var age = Date.now() - f.created, idx = 0;
+  for (var i = 0; i < STEPS.length; i++) if (age >= STEPS[i][0]) idx = i;
+  return idx;
+}
+function renderTrack() { setText('trackErr', ''); $('trackBody').innerHTML = ''; drawTrackList(); }
+function drawTrackList() {
+  var list = loadFaults(), h = '';
+  for (var i = 0; i < list.length; i++) h += '<button class="opt" onclick="trackRef(\'' + esc(list[i].ref) + '\')"><span>' + esc(list[i].ref) + ' · ' + esc(list[i].cat) + '</span><i>›</i></button>';
+  $('trackList').innerHTML = h || '<p class="n">No faults reported on this phone yet.</p>';
+}
+function trackRef(ref) {
+  ref = String(ref || '').trim().toUpperCase();
+  show('track');
+  $('tRef').value = ref;
+  if (!ref) { setText('trackErr', 'Enter your fault reference number.'); return; }
+  var f = loadFaults().filter(function (x) { return x.ref === ref; })[0];
+  if (!f) { setText('trackErr', 'No fault with that reference was found on this phone.'); $('trackBody').innerHTML = ''; return; }
+  setText('trackErr', '');
+  var idx = faultStatus(f), h = '<div class="c"><div class="l">Status</div><div class="v">' + STEPS[idx][2] + '</div>' +
+    row('Reported', fmtDT(new Date(f.created).toISOString())) + row('Problem', f.cat) + row('Location', f.loc) + '</div><div class="c"><div class="sec">Updates</div>';
+  for (var i = 0; i <= idx; i++) h += '<div class="mini"><span><span class="dot' + (i === idx && idx < 3 ? '' : ' done') + '"></span>' + STEPS[i][1] + '</span><span class="l">' + esc(fmtDT(new Date(f.created + STEPS[i][0]).toISOString())) + '</span></div>';
+  $('trackBody').innerHTML = h + '</div><div class="tag">Demonstration status. Simulated by the app, not from NWEC.</div>';
+  if (f.cat === FIRE) $('trackBody').innerHTML += fireBox();
 }
 
 // ---------- ACCOUNT ----------
