@@ -60,7 +60,7 @@ button{font:inherit;cursor:pointer}
 <body>
 
 <div class="bar"><b>Northwestern Energy Corporation</b><span>PowerPay customer app</span></div>
-<div class="demo">Test version. Simulated mobile money, no real payments.</div>
+<div class="demo" id="banner">Test version. Simulated mobile money, no real payments.</div>
 
 <!-- LOADING -->
 <div class="s on" id="boot"><p class="sub" style="margin-top:80px">Loading…</p></div>
@@ -73,6 +73,8 @@ button{font:inherit;cursor:pointer}
   <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off">
   <button class="b" id="loginBtn" onclick="signIn()">Sign in</button>
   <p class="err" id="loginErr" role="status"></p>
+  <button class="b2" onclick="startDemo()">Try the demo (works offline)</button>
+  <button class="lk out" onclick="resetDemo()">Reset demo data</button>
 </div>
 
 <!-- HOME -->
@@ -177,6 +179,7 @@ var AMOUNTS = [50, 100, 200, 500];
 var METHODS = ['MTN Mobile Money', 'Airtel Money', 'Zamtel Kwacha'];
 
 var session = null, me = null, current = 'boot', pollTimer = null, pollToken = 0;
+var demo = false;
 var order = {kwacha:0, units:0, method:METHODS[0], phone:''};
 
 function $(id) { return document.getElementById(id); }
@@ -193,6 +196,7 @@ function store(k, v) { try { if (v === null) localStorage.removeItem(k); else lo
 function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
 function rpc(name, body) {
+  if (demo) return demoRpc(name, body);
   return fetch(SUPABASE_URL + '/rest/v1/rpc/' + name, {
     method: 'POST',
     headers: {'Content-Type': 'application/json', 'apikey': SUPABASE_KEY},
@@ -207,6 +211,91 @@ function rpc(name, body) {
   });
 }
 
+
+// ---------- OFFLINE DEMO ----------
+// A small pretend server that lives inside the app. No internet, no database.
+// It answers the same calls as the real server, so every screen works the same.
+var DEMO_KEY = 'pp_demo_state', demoMem = null;
+function demoSeed() {
+  function o(id, d, k, u, n, ph, t) { return {id:id, date:d, kwacha:k, units:u, network:n, phone:ph, status:'paid', token:t, created:Date.parse(d)}; }
+  return {
+    units: 42.5, seq: 5,
+    orders: [
+      o(4, '2026-10-28T08:00:00Z', 200, 133.3, 'MTN Mobile Money', '096 *** 1234', '4821 7305 9912 3347 0658'),
+      o(3, '2026-10-14T08:00:00Z', 100, 66.7,  'Airtel Money',     '097 *** 5678', '1190 6683 4027 5518 9034'),
+      o(2, '2026-09-30T08:00:00Z', 200, 133.3, 'MTN Mobile Money', '096 *** 1234', '7752 0146 3381 2269 8815'),
+      o(1, '2026-09-15T08:00:00Z', 50,  33.3,  'Zamtel Kwacha',    '095 *** 9012', '3306 9158 7724 0091 6642')
+    ]
+  };
+}
+function demoState() {
+  if (demoMem) return demoMem;
+  var raw = load(DEMO_KEY);
+  try { demoMem = raw ? JSON.parse(raw) : null; } catch (e) { demoMem = null; }
+  if (!demoMem || !demoMem.orders) demoMem = demoSeed();
+  return demoMem;
+}
+function demoSave() { store(DEMO_KEY, JSON.stringify(demoMem)); }
+function demoToken() {
+  var t = [];
+  for (var i = 0; i < 5; i++) { var g = ''; for (var j = 0; j < 4; j++) g += Math.floor(Math.random() * 10); t.push(g); }
+  return t.join(' ');
+}
+function demoOrder(o) {
+  return {id:o.id, receipt:'P' + o.id, date:o.date, kwacha:o.kwacha, units:o.units, network:o.network, phone:o.phone, status:o.status, token:o.status === 'paid' ? o.token : null};
+}
+function demoRpc(name, b) {
+  return new Promise(function (resolve, reject) {
+    var st = demoState();
+    function fail(m) { reject(new Error(m)); }
+    if (name === 'app_logout') return resolve(null);
+    if (b.p_session !== 'demo') return fail('Please sign in again.');
+    if (name === 'app_me') {
+      return resolve({account:'204518', name:'Sample Customer', phone:'097 000 0000', address:'Plot 12, Example Road, Lusaka',
+        meter:'0123456789', tariff:'Residential', units:st.units, price:1.5, orders:st.orders.map(demoOrder)});
+    }
+    if (name === 'app_start_payment') {
+      var k = Number(b.p_kwacha), ph = String(b.p_phone || '');
+      if (!(k >= 10 && k <= 10000)) return fail('Enter an amount from K10 to K10,000.');
+      if (!/^[0-9]{10}$/.test(ph)) return fail('Enter the 10-digit mobile money number.');
+      if (['MTN Mobile Money', 'Airtel Money', 'Zamtel Kwacha'].indexOf(b.p_network) < 0) return fail('Choose MTN, Airtel or Zamtel.');
+      var o = {id:st.seq++, date:new Date().toISOString(), kwacha:k, units:Math.round(k / 1.5 * 10) / 10, network:b.p_network,
+        phone:maskPhone(ph), status:'pending', token:null, created:Date.now(), last2:ph.slice(-2)};
+      st.orders.unshift(o); demoSave();
+      return resolve(demoOrder(o));
+    }
+    if (name === 'app_check_payment') {
+      var f = null;
+      for (var i = 0; i < st.orders.length; i++) if (st.orders[i].id === Number(b.p_order)) f = st.orders[i];
+      if (!f) return fail('Order not found.');
+      if (f.status === 'pending') {
+        var age = Date.now() - f.created;
+        if (age > 300000) f.status = 'failed';
+        else if (age >= 3000) {
+          if (f.last2 === '99') f.status = 'failed';
+          else { f.status = 'paid'; f.token = demoToken(); st.units = Math.round((st.units + f.units) * 10) / 10; }
+        }
+        demoSave();
+      }
+      var r = demoOrder(f); r.units_now = st.units;
+      return resolve(r);
+    }
+    fail('Something went wrong. Try again.');
+  });
+}
+function setBanner() {
+  $('banner').textContent = demo ? 'Demo mode. Works without internet. Example data only.' : 'Test version. Simulated mobile money, no real payments.';
+}
+function startDemo() {
+  demo = true; session = 'demo'; store('pp_session', 'demo'); store('pp_demo', '1');
+  setBanner(); setText('loginErr', '');
+  loadMe().then(function () { show('home'); });
+}
+function resetDemo() {
+  demoMem = demoSeed(); demoSave();
+  setText('loginErr', 'Demo data is back to how it started.', true);
+}
+
 function loadMe() { return rpc('app_me', {p_session: session}).then(function (m) { me = m; return m; }); }
 
 // A request failed. If the session ran out, go back to sign-in.
@@ -214,7 +303,7 @@ function failed(e, errId) {
   if (e.message === 'Please sign in again.') { endSession(); show('login'); setText('loginErr', e.message); return; }
   setText(errId, e.message);
 }
-function endSession() { session = null; me = null; store('pp_session', null); }
+function endSession() { session = null; me = null; demo = false; store('pp_session', null); store('pp_demo', null); setBanner(); }
 
 // ---------- NAVIGATION ----------
 function show(name) {
@@ -248,13 +337,13 @@ function signIn() {
     session = r.session; store('pp_session', session);
     $('pin').value = '';
     return loadMe().then(function () { setText('loginErr', ''); show('home'); });
-  }).catch(function (e) { setText('loginErr', e.message); }).then(function () { $('loginBtn').disabled = false; });
+  }).catch(function (e) { setText('loginErr', e.message + (e.fromServer ? '' : ' You can still try the demo below.')); }).then(function () { $('loginBtn').disabled = false; });
 }
 function signOut() {
   var s = session;
   endSession(); $('acc').value = ''; $('pin').value = ''; setText('loginErr', '');
   show('login');
-  if (s) rpc('app_logout', {p_session: s}).catch(function () {});
+  if (s && s !== 'demo') rpc('app_logout', {p_session: s}).catch(function () {});
 }
 
 // ---------- HOME ----------
@@ -391,10 +480,15 @@ function renderAccount() {
 // ---------- START ----------
 (function start() {
   session = load('pp_session');
+  if (session === 'demo') {
+    if (load('pp_demo') === '1') { demo = true; setBanner(); loadMe().then(function () { show('home'); }); return; }
+    session = null; store('pp_session', null);
+  }
   if (!session) { show('login'); return; }
   loadMe().then(function () { show('home'); }, function (e) {
-    if (e.fromServer) { endSession(); show('login'); }
-    else { show('login'); setText('loginErr', e.message); }
+    // Only an expired sign-in ends the session. Any other problem keeps it, so opening the app again retries.
+    if (e.message === 'Please sign in again.') { endSession(); show('login'); }
+    else { show('login'); setText('loginErr', e.message + ' Close and reopen the app to try again.'); }
   });
 })();
 </script>
