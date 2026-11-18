@@ -3,77 +3,135 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>PowerPay</title>
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:#f4f6f8;color:#17202b;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
-.s{display:none;padding:24px;max-width:480px;margin:0 auto}
-.s.on{display:block}
-h1{font-size:30px;text-align:center;margin:8px 0 4px}
-h2{font-size:24px;margin:12px 0 4px}
-.sub{color:#666;text-align:center;margin:0 0 28px}
-.small{color:#666;margin:0 0 18px}
-input{width:100%;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff;color:#17202b}
-button{font:inherit;cursor:pointer}
-.b{width:100%;background:#f5a623;color:#fff;border:0;border-radius:10px;padding:16px;font-size:18px;font-weight:600;margin-top:8px}
-.b:disabled{opacity:.4}
-.b2{width:100%;background:#fff;color:#333;border:1px solid #ddd;border-radius:10px;padding:16px;font-size:17px;font-weight:600;margin-top:10px}
-.lk{background:none;border:0;color:#888;font-size:16px;padding:0;margin:0 0 14px}
-.out{display:block;margin:20px auto 0}
-.c{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px}
-.l{color:#888;font-size:14px}
-.v{font-size:34px;font-weight:700;margin-top:4px}
-.v2{font-size:18px;font-weight:600;margin-top:2px}
-.n{color:#888;font-size:12px;margin-top:8px}
+:root{
+  --bg:#f2f4f8;--card:#ffffff;--ink:#0e1623;--muted:#64718a;--line:#e3e8f0;
+  --brand:#0c2140;--brand2:#17487f;--accent:#ffb21e;--accent-ink:#2b1c00;
+  --good:#0f9d58;--bad:#d1372b;--warn-bg:#fff3d6;--warn-ink:#7a5200;--chip:#eaeff6;
+  --danger-bg:#fdecea;--danger-ink:#8a1f14;--tab:rgba(255,255,255,.88);--shadow:0 1px 2px rgba(14,22,35,.06),0 10px 28px rgba(14,22,35,.07);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0a0f18;--card:#121a26;--ink:#eef2f8;--muted:#93a1b8;--line:#223044;
+    --warn-bg:#3a2c0e;--warn-ink:#f3cf86;--chip:#1b2636;--good:#37c987;--bad:#ff8a7d;
+    --danger-bg:#3b1612;--danger-ink:#ffb4aa;--tab:rgba(18,26,38,.9);--shadow:none;color-scheme:dark;
+  }
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--bg)}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:16px;line-height:1.4;font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer;color:inherit}
+button:active{transform:scale(.98)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.hide{display:none!important}
+.ic{width:24px;height:24px;flex:none}
+
+.bar{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;padding:calc(env(safe-area-inset-top) + 14px) 20px 14px;display:flex;align-items:center;gap:12px}
+.mark{width:38px;height:38px;border-radius:12px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.bar b{display:block;font-size:17px;letter-spacing:.2px}
+.bar span{display:block;font-size:12px;opacity:.78}
+.demo{background:var(--warn-bg);color:var(--warn-ink);font-size:12px;text-align:center;padding:6px 12px}
+
+.s{display:none;padding:20px 20px calc(110px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto}
+.s.on{display:block;animation:in .2s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.s.on{animation:none}button:active{transform:none}}
+
+h1{font-size:28px;text-align:center;margin:8px 0 4px;letter-spacing:-.01em}
+h2{font-size:24px;margin:10px 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);text-align:center;margin:0 0 26px}
+.small{color:var(--muted);margin:0 0 16px}
+input,textarea{width:100%;font:inherit;font-size:16px;padding:15px 16px;border:1px solid var(--line);border-radius:14px;margin-bottom:14px;background:var(--card);color:var(--ink)}
+textarea{min-height:92px}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+
+.b{width:100%;min-height:54px;background:var(--accent);color:var(--accent-ink);border:0;border-radius:16px;padding:15px;font-size:17px;font-weight:700;margin-top:8px;box-shadow:0 6px 18px rgba(255,178,30,.28)}
+.b:disabled{opacity:.4;box-shadow:none}
+.b2{width:100%;min-height:52px;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px;font-size:16px;font-weight:600;margin-top:10px}
+.lk{background:none;border:0;color:var(--muted);font-size:16px;padding:8px 0;margin:0 0 6px;min-height:44px}
+.out{display:block;margin:18px auto 0}
+.sm{width:auto;font-size:15px;padding:10px 16px;margin-top:10px;min-height:44px}
+
+.c{background:var(--card);border-radius:20px;padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+.l{color:var(--muted);font-size:13px}
+.v{font-size:34px;font-weight:800;margin-top:4px;letter-spacing:-.02em}
+.v2{font-size:18px;font-weight:650;margin-top:2px}
+.n{color:var(--muted);font-size:12px;margin-top:8px}
 .r{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}
 .r b{text-align:right}
+.sec{font-weight:700;margin:10px 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
-.chip{background:#fff;border:1px solid #ddd;border-radius:20px;padding:10px 18px;font-size:16px;font-weight:600;color:#333}
-.chip.on{background:#f5a623;border-color:#f5a623;color:#fff}
-.opt{display:flex;justify-content:space-between;background:#fff;border:1px solid #ddd;border-radius:10px;padding:16px;margin-bottom:10px;width:100%;text-align:left;font-size:16px;color:#17202b}
-.opt.on{border-color:#f5a623}
-.opt i{color:#f5a623;font-style:normal}
-.sec{font-weight:600;margin:6px 0 8px}
-.tick{font-size:64px;text-align:center;color:#1f8a52;margin-top:30px}
-.cross{font-size:64px;text-align:center;color:#c0392b;margin-top:30px}
-.tok{font-size:22px;font-weight:700;letter-spacing:1px;margin-top:6px}
+.chip{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:11px 20px;font-size:16px;font-weight:650;min-height:44px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.opt{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:10px;width:100%;text-align:left;font-size:16px;min-height:56px}
+.opt.on{border-color:var(--accent);box-shadow:0 0 0 2px rgba(255,178,30,.35)}
+.opt i{color:var(--accent);font-style:normal}
+.tick{font-size:64px;text-align:center;color:var(--good);margin-top:30px}
+.cross{font-size:64px;text-align:center;color:var(--bad);margin-top:30px}
+.tok{font-size:22px;font-weight:800;letter-spacing:1px;margin-top:6px;font-variant-numeric:tabular-nums}
 .hist{width:100%;text-align:left;border:0;background:none;padding:0;display:block;font:inherit;color:inherit}
 .top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.u{font-size:18px;font-weight:700;color:#1f8a52}
-.det{margin-top:14px;padding-top:14px;border-top:1px solid #eee}
-.bar{background:#17202b;color:#fff;padding:14px 24px;text-align:center}
-.bar b{display:block;font-size:15px;letter-spacing:.3px}
-.bar span{font-size:12px;color:#f5a623}
-.demo{background:#fff4dc;color:#7a5200;font-size:12px;text-align:center;padding:6px}
+.u{font-size:18px;font-weight:750;color:var(--good)}
+.det{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
 .pulse{font-size:40px;text-align:center;margin:40px 0 10px;animation:p 1.2s infinite}
 @keyframes p{0%,100%{opacity:1}50%{opacity:.25}}
-.err{color:#c0392b;font-size:14px;margin:10px 0 0;min-height:20px}
-.ok{color:#1f8a52}
-.badge{font-size:12px;font-weight:600;border-radius:99px;padding:3px 10px}
-.badge.pending{background:#fff4dc;color:#7a5200}
-.badge.failed{background:#eee;color:#666}
-.notice{background:#fff4dc;color:#7a5200;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px}
-.notice button{background:none;border:0;color:#7a5200;font-weight:700;text-decoration:underline;padding:0}
-.sm{width:auto;font-size:15px;padding:10px 16px;margin-top:10px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.tile{background:#fff;border:1px solid #ddd;border-radius:12px;padding:14px;text-align:left;color:#17202b;display:flex;flex-direction:column;gap:4px;min-height:112px}
-.tile i{font-style:normal;font-size:26px}
-.tile b{font-size:16px}
-.tile span{font-size:12px;color:#888}
-.tile.off{opacity:.6}
-.tile.wide{grid-column:1/-1;min-height:0}
-textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #ddd;border-radius:10px;margin-bottom:14px;background:#fff;color:#17202b;min-height:90px}
-.warn{background:#fdecea;color:#8a1f14;border-radius:12px;padding:14px;margin-bottom:14px;font-size:14px}
-.tag{background:#fff4dc;color:#7a5200;font-size:12px;border-radius:8px;padding:6px 10px;margin-bottom:12px}
-.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#f5a623;margin-right:8px}
-.dot.done{background:#1f8a52}
-.mini{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:15px}
+.err{color:var(--bad);font-size:14px;margin:10px 0 0;min-height:20px}
+.ok{color:var(--good)}
+.badge{font-size:12px;font-weight:650;border-radius:999px;padding:3px 10px;background:var(--chip);color:var(--muted)}
+.badge.pending{background:var(--warn-bg);color:var(--warn-ink)}
+.notice{background:var(--warn-bg);color:var(--warn-ink);border-radius:16px;padding:14px;margin-bottom:14px;font-size:14px}
+.notice button{background:none;border:0;color:inherit;font-weight:700;text-decoration:underline;padding:0}
+.warn{background:var(--danger-bg);color:var(--danger-ink);border-radius:16px;padding:14px;margin-bottom:14px;font-size:14px}
+.tag{background:var(--warn-bg);color:var(--warn-ink);font-size:12px;border-radius:10px;padding:7px 11px;margin-bottom:12px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:8px}
+.dot.done{background:var(--good)}
+.mini{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .mini:last-child{border-bottom:0}
+
+/* home */
+.hero{background:linear-gradient(145deg,var(--brand),var(--brand2));color:#fff;border-radius:26px;padding:20px;margin-bottom:14px;box-shadow:0 14px 34px rgba(12,33,64,.28)}
+.hero .hi{font-size:15px;font-weight:650;opacity:.95}
+.hero .acct{font-size:12px;opacity:.7;margin-top:2px}
+.hero .lbl{font-size:12px;opacity:.7;margin-top:18px;text-transform:uppercase;letter-spacing:.08em}
+.hero .big{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1.05;margin-top:2px}
+.spark{display:flex;align-items:flex-end;gap:5px;height:34px;margin-top:12px}
+.spark i{flex:1;max-width:22px;background:rgba(255,255,255,.28);border-radius:5px 5px 2px 2px}
+.spark i:last-child{background:var(--accent)}
+.meta{display:flex;gap:22px;margin-top:16px;flex-wrap:wrap}
+.meta span{display:block;font-size:11px;opacity:.65;text-transform:uppercase;letter-spacing:.08em}
+.meta b{font-size:15px;font-weight:650}
+.hero .b{margin-top:18px}
+.tokrow{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tk{font-size:15px;font-weight:750;letter-spacing:0;margin-top:2px;white-space:nowrap}
+.pill{background:var(--chip);border:0;border-radius:999px;padding:10px 18px;font-weight:700;min-height:44px}
+.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 6px;margin:6px 0 18px}
+.qi{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12px;font-weight:600;padding:4px 0;position:relative;min-height:84px}
+.qi .ico{width:54px;height:54px;border-radius:18px;background:var(--card);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--brand2)}
+@media (prefers-color-scheme: dark){.qi .ico{color:var(--accent)}}
+.qi.dim{opacity:.55}
+.qi em{position:absolute;top:-2px;right:6px;font-style:normal;font-size:9px;font-weight:800;background:var(--chip);color:var(--muted);border-radius:99px;padding:2px 6px;letter-spacing:.04em}
+.hd{display:flex;justify-content:space-between;align-items:center;margin:4px 0 6px}
+.hd b{font-size:17px}
+.hd button{background:none;border:0;color:var(--brand2);font-weight:700;padding:8px 0;min-height:40px}
+@media (prefers-color-scheme: dark){.hd button{color:var(--accent)}}
+.support{display:flex;gap:14px;align-items:center}
+.support .ico{width:46px;height:46px;border-radius:15px;background:var(--chip);display:grid;place-items:center;color:var(--brand2);flex:none}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;display:flex;justify-content:space-around;background:var(--tab);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom));z-index:20}
+.tabbar button{flex:1;max-width:120px;background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:650;color:var(--muted);min-height:52px;padding:4px 0}
+.tabbar button .pillbg{display:grid;place-items:center;width:52px;height:30px;border-radius:999px}
+.tabbar button.on{color:var(--ink)}
+.tabbar button.on .pillbg{background:var(--accent);color:var(--accent-ink)}
 </style>
 </head>
 <body>
 
-<div class="bar"><b>Northwestern Energy Corporation</b><span>PowerPay customer app</span></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol><symbol id="i-bolt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></symbol><symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5"/><path d="M12 18h.01"/></symbol><symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/></symbol><symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol><symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></symbol><symbol id="i-receipt" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol><symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol><symbol id="i-fileplus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14H6z"/><path d="M12 11v6M9 14h6"/></symbol><symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol><symbol id="i-headset" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><path d="M4 14h3v5H4zM17 14h3v5h-3z"/></symbol><symbol id="i-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></symbol></defs></svg>
+
+<div class="bar"><div class="mark"><svg class="ic " aria-hidden="true"><use href="#i-bolt"/></svg></div><div><b>PowerPay</b><span>Northwestern Energy Corporation</span></div></div>
 <div class="demo" id="banner">Test version. Simulated mobile money, no real payments.</div>
 
 <!-- LOADING -->
@@ -81,8 +139,8 @@ textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #d
 
 <!-- LOGIN -->
 <div class="s" id="login">
-  <h1 style="margin-top:36px">⚡ PowerPay</h1>
-  <p class="sub">Sign in to your account</p>
+  <h1 style="margin-top:30px">Welcome back</h1>
+  <p class="sub">Sign in to buy power and manage your account</p>
   <input id="acc" inputmode="numeric" placeholder="Account number" autocomplete="off">
   <input id="pin" type="password" inputmode="numeric" placeholder="PIN" autocomplete="off">
   <button class="b" id="loginBtn" onclick="signIn()">Sign in</button>
@@ -93,27 +151,36 @@ textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #d
 
 <!-- HOME -->
 <div class="s" id="home">
-  <h2 id="hName"></h2>
-  <p class="small">Account: <span id="acctOut"></span></p>
+  <div class="hero">
+    <div class="hi" id="hName"></div>
+    <div class="acct">Account <span id="acctOut"></span></div>
+    <div class="lbl">Units remaining</div>
+    <div class="big" id="units"></div>
+    <div class="spark" id="spark" aria-hidden="true"></div>
+    <div class="meta">
+      <div><span>Meter</span><b id="meter1"></b></div>
+      <div><span>Last purchase</span><b id="last"></b></div>
+    </div>
+    <button class="b" id="heroBuy" onclick="nav('buy')">Buy electricity</button>
+  </div>
   <div id="pendingNote"></div>
-  <div class="c"><div class="l">Units remaining</div><div class="v" id="units"></div></div>
-  <div class="c">
-    <div class="l">Meter number</div><div class="v2" id="meter1"></div>
-    <div class="l" style="margin-top:12px">Last purchase</div><div class="v2" id="last"></div>
+  <div class="c tokrow hide" id="tokRow">
+    <div><div class="l">Last token</div><div class="tk" id="tokVal"></div></div>
+    <button class="pill" id="tokCopy" onclick="copyText(lastToken, this)">Copy</button>
   </div>
-  <div class="grid">
-    <button class="tile" onclick="nav('buy')"><i>⚡</i><b>Buy electricity</b><span>Get a token for your meter</span></button>
-    <button class="tile off" onclick="show('postpaid')"><i>🧾</i><b>Postpaid bill</b><span>Coming in the next update</span></button>
-    <button class="tile" onclick="show('fault')"><i>🛠️</i><b>Report a fault</b><span>No supply, low voltage and more</span></button>
-    <button class="tile" onclick="show('track')"><i>🔎</i><b>Track a fault</b><span>See how it is going</span></button>
-    <button class="tile wide" onclick="nav('lastScreen')"><i>🕘</i><b>Last purchase</b><span>Get your last token again</span></button>
+
+  <div class="qa">
+    <button class="qi" id="qaLast" onclick="nav('lastScreen')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-clock"/></svg></span>Last token</button>
+    <button class="qi" id="qaFault" onclick="show('fault')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-alert"/></svg></span>Report fault</button>
+    <button class="qi" id="qaTrack" onclick="show('track')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-search"/></svg></span>Track fault</button>
+    <button class="qi" id="qaHist" onclick="nav('history')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-list"/></svg></span>History</button>
+    <button class="qi dim" id="qaPost" onclick="soon('Postpaid bill','Showing a postpaid balance needs access to Northwestern Energy Corporation\'s billing system. It will be added once that is connected.')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-receipt"/></svg></span>Postpaid<em>SOON</em></button>
+    <button class="qi dim" id="qaSched" onclick="soon('Power schedule','Load management schedules come from the NWEC operations team. They will appear here once they are shared with the app.')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-calendar"/></svg></span>Schedule<em>SOON</em></button>
+    <button class="qi dim" id="qaApply" onclick="soon('New connection','Applying for a new power connection needs the NWEC application process to be connected to the app.')"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-fileplus"/></svg></span>New connection<em>SOON</em></button>
   </div>
-  <div class="sec">Recent purchases</div>
+
+  <div class="hd"><b>Recent purchases</b><button onclick="nav('history')">See all</button></div>
   <div class="c" id="recent"></div>
-  <button class="b2" onclick="nav('history')">Purchase history</button>
-  <button class="b2" onclick="nav('account')">My account</button>
-  <div class="c" style="margin-top:14px"><div class="l">Customer support</div><div class="n" style="font-size:14px;color:#17202b;margin-top:4px">Contact details will be added here by Northwestern Energy Corporation.</div></div>
-  <button class="lk out" onclick="signOut()">Sign out</button>
   <p class="err" id="homeErr" role="status"></p>
 </div>
 
@@ -186,10 +253,11 @@ textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #d
 
 <!-- ACCOUNT -->
 <div class="s" id="account">
-  <button class="lk" onclick="nav('home')">‹ Back</button>
   <h2>My account</h2>
-  <div class="c" style="margin-top:20px" id="acctCard"></div>
-  <p class="n">To change these details, contact Northwestern Energy Corporation.</p>
+  <div class="c" style="margin-top:16px" id="acctCard"></div>
+  <div class="c support"><span class="ico"><svg class="ic " aria-hidden="true"><use href="#i-headset"/></svg></span><div><div class="v2">Customer support</div><div class="n" style="font-size:14px;margin-top:2px">Contact details will be added here by Northwestern Energy Corporation.</div></div></div>
+  <button class="b2" id="signOutBtn" onclick="signOut()">Sign out</button>
+  <p class="n">To change your details, contact Northwestern Energy Corporation.</p>
 </div>
 
 <!-- LAST PURCHASE -->
@@ -199,17 +267,17 @@ textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #d
   <div id="lastBody"></div>
 </div>
 
-<!-- POSTPAID (not built yet) -->
-<div class="s" id="postpaid">
+<!-- COMING SOON -->
+<div class="s" id="soon">
   <button class="lk" onclick="show('home')">‹ Back</button>
-  <h2>Postpaid bill</h2>
+  <h2 id="soonTitle"></h2>
   <div class="c"><div class="v2">Not available in this version</div>
-  <p class="n" style="font-size:14px;color:#17202b">Showing a postpaid balance needs access to Northwestern Energy Corporation's billing system. This screen will be added in the next update.</p></div>
+  <p class="n" style="font-size:14px;color:var(--ink)" id="soonText"></p></div>
 </div>
 
 <!-- REPORT A FAULT -->
 <div class="s" id="fault">
-  <button class="lk" onclick="show('home')">‹ Back</button>
+  <button class="lk" onclick="show('track')">‹ Back</button>
   <h2>Report a fault</h2>
   <div class="tag">Demonstration. Saved on this phone only. Not sent to NWEC.</div>
   <div class="sec">What is the problem?</div>
@@ -251,16 +319,24 @@ textarea{width:100%;font:inherit;font-size:16px;padding:14px;border:1px solid #d
 
 <!-- TRACK A FAULT -->
 <div class="s" id="track">
-  <button class="lk" onclick="show('home')">‹ Back</button>
-  <h2>Track a fault</h2>
+  <h2>Faults</h2>
+  <button class="b" id="reportBtn" onclick="show('fault')">Report a fault</button>
+  <div class="sec" style="margin-top:22px">Track a fault</div>
   <div class="tag">Demonstration. The status shown is simulated by the app. It is not a real NWEC update.</div>
   <input id="tRef" placeholder="Fault reference, e.g. F-ABC123" autocomplete="off" autocapitalize="characters">
-  <button class="b" onclick="trackRef($('tRef').value)">Check status</button>
+  <button class="b2" onclick="trackRef($('tRef').value)" style="margin-top:0">Check status</button>
   <p class="err" id="trackErr" role="status"></p>
   <div id="trackBody"></div>
   <div class="sec" style="margin-top:18px">Faults reported on this phone</div>
   <div id="trackList"></div>
 </div>
+
+<nav class="tabbar hide" id="tabbar" aria-label="Main">
+  <button id="tabHome" onclick="nav('home')"><span class="pillbg"><svg class="ic " aria-hidden="true"><use href="#i-home"/></svg></span>Home</button>
+  <button id="tabBuy" onclick="nav('buy')"><span class="pillbg"><svg class="ic " aria-hidden="true"><use href="#i-bolt"/></svg></span>Buy</button>
+  <button id="tabFaults" onclick="show('track')"><span class="pillbg"><svg class="ic " aria-hidden="true"><use href="#i-alert"/></svg></span>Faults</button>
+  <button id="tabAccount" onclick="nav('account')"><span class="pillbg"><svg class="ic " aria-hidden="true"><use href="#i-user"/></svg></span>Account</button>
+</nav>
 
 <script>
 // ---------- SERVER CONNECTION ----------
@@ -399,12 +475,21 @@ function failed(e, errId) {
 function endSession() { session = null; me = null; demo = false; store('pp_session', null); store('pp_demo', null); setBanner(); }
 
 // ---------- NAVIGATION ----------
+var TABS = ['home', 'buy', 'history', 'lastScreen', 'account', 'fault', 'track', 'soon'];
+var TABOF = {home:'tabHome', history:'tabHome', lastScreen:'tabHome', soon:'tabHome', buy:'tabBuy', fault:'tabFaults', track:'tabFaults', account:'tabAccount'};
+function setTab(name) {
+  var all = document.querySelectorAll('#tabbar button');
+  for (var i = 0; i < all.length; i++) { var on = all[i].id === TABOF[name]; all[i].classList.toggle('on', on); if (on) all[i].setAttribute('aria-current', 'page'); else all[i].removeAttribute('aria-current'); }
+}
+function soon(title, text) { $('soonTitle').textContent = title; $('soonText').textContent = text; show('soon'); }
 function show(name) {
   if (name !== 'wait') stopPolling();
   var all = document.querySelectorAll('.s');
   for (var i = 0; i < all.length; i++) all[i].classList.remove('on');
   $(name).classList.add('on');
   current = name;
+  $('tabbar').classList.toggle('hide', TABS.indexOf(name) < 0);
+  setTab(name);
   window.scrollTo(0, 0);
   if (name === 'home') renderHome();
   if (name === 'buy') renderBuy();
@@ -444,14 +529,22 @@ function signOut() {
 
 // ---------- HOME ----------
 function paidOrders() { return (me ? me.orders : []).filter(function (o) { return o.status === 'paid'; }); }
+var lastToken = '';
 function renderHome() {
   if (!me) return;
   $('hName').textContent = 'Hello, ' + me.name;
   $('acctOut').textContent = me.account;
   $('units').textContent = Number(me.units).toFixed(1) + ' kWh';
   $('meter1').textContent = me.meter;
-  var p = paidOrders()[0];
+  var paid = paidOrders(), p = paid[0];
   $('last').textContent = p ? 'K' + Number(p.kwacha) + ' on ' + fmtDate(p.date) : 'No purchases yet';
+  var s6 = paid.slice(0, 6).reverse(), mx = 1, sh = '';
+  s6.forEach(function (o) { mx = Math.max(mx, Number(o.kwacha)); });
+  s6.forEach(function (o) { sh += '<i style="height:' + Math.max(14, Math.round(Number(o.kwacha) / mx * 100)) + '%"></i>'; });
+  $('spark').innerHTML = sh;
+  lastToken = p ? p.token : '';
+  $('tokRow').classList.toggle('hide', !p);
+  if (p) { $('tokVal').textContent = p.token; $('tokCopy').textContent = 'Copy'; }
   var pend = me.orders.filter(function (o) { return o.status === 'pending'; }).length;
   var rec = me.orders.slice(0, 3), rh = '';
   for (var i = 0; i < rec.length; i++) {
@@ -589,7 +682,7 @@ function shareText(t, b) {
 function renderLast() {
   if (!me) return;
   var p = paidOrders()[0];
-  if (!p) { $('lastBody').innerHTML = '<div class="c"><div class="v2">No purchase found</div><p class="n" style="font-size:14px;color:#17202b">When you buy electricity, your latest token will appear here.</p></div>'; return; }
+  if (!p) { $('lastBody').innerHTML = '<div class="c"><div class="v2">No purchase found</div><p class="n" style="font-size:14px;color:var(--ink)">When you buy electricity, your latest token will appear here.</p></div>'; return; }
   $('lastBody').innerHTML = '<div class="c"><div class="l">Token (enter on the meter)</div><div class="tok" id="lastTok">' + esc(p.token) + '</div></div>' +
     '<div class="c">' + row('Meter', me.meter) + row('Amount paid', 'K' + Number(p.kwacha).toFixed(2)) + row('Units', Number(p.units).toFixed(1) + ' kWh') + row('Date and time', fmtDT(p.date)) + row('Reference', p.receipt) + '</div>' +
     '<button class="b" id="lastCopy" onclick="copyText(\'' + esc(p.token) + '\', $(\'lastCopy\'))">Copy token</button>' +
