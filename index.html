@@ -89,6 +89,7 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
 .dot.done{background:var(--good)}
 .mini{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:15px}
 .mini:last-child{border-bottom:0}
+.photo{display:block;width:100%;max-height:260px;object-fit:cover;border-radius:16px;margin:12px 0 4px}
 
 /* home */
 .hero{background:linear-gradient(145deg,var(--brand),var(--brand2));color:#fff;border-radius:26px;padding:20px;margin-bottom:14px;box-shadow:0 14px 34px rgba(12,33,64,.28)}
@@ -293,6 +294,11 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
   <input id="fLoc" placeholder="Street, area or landmark" autocomplete="off">
   <div class="sec">More detail (optional)</div>
   <textarea id="fDesc" placeholder="Tell us what you see or hear"></textarea>
+  <div class="sec">Photo (optional)</div>
+  <input type="file" id="fPhoto" accept="image/*" class="hide" onchange="photoPicked(this)">
+  <button class="b2" id="photoBtn" onclick="$('fPhoto').click()" style="margin-top:0">Take or choose a photo</button>
+  <img id="photoPrev" class="photo hide" alt="Photo of the fault">
+  <button class="lk hide" id="photoDel" onclick="clearPhoto()">Remove photo</button>
   <button class="b" onclick="faultReview()">Review</button>
   <p class="err" id="faultErr" role="status"></p>
 </div>
@@ -507,6 +513,21 @@ function nav(name) {
   }
 }
 
+// ---------- SWIPE BETWEEN MAIN PAGES ----------
+var SWIPE = ['home', 'buy', 'track', 'account'], sx = 0, sy = 0, st0 = 0, sOk = false;
+document.addEventListener('touchstart', function (e) {
+  var t = e.touches[0]; sx = t.clientX; sy = t.clientY; st0 = Date.now();
+  sOk = e.touches.length === 1 && SWIPE.indexOf(current) >= 0 && !(e.target.closest && e.target.closest('input,textarea,.spark'));
+}, {passive: true});
+document.addEventListener('touchend', function (e) {
+  if (!sOk) return; sOk = false;
+  var t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+  if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6 || Date.now() - st0 > 700) return;
+  var i = SWIPE.indexOf(current) + (dx < 0 ? 1 : -1);
+  if (i < 0 || i >= SWIPE.length) return;
+  if (SWIPE[i] === 'track') show('track'); else nav(SWIPE[i]);
+}, {passive: true});
+
 // ---------- SIGN IN / OUT ----------
 function signIn() {
   var a = $('acc').value.trim(), p = $('pin').value;
@@ -708,17 +729,41 @@ function setCat(i) { faultCat = FAULT_CATS[i]; drawCats(); }
 function renderFault() {
   faultCat = null; drawCats(); setText('faultErr', '');
   $('fName').value = me ? me.name : ''; $('fPhone').value = me ? digits(me.phone) : '';
-  $('fMeter').value = me ? me.meter : ''; $('fLoc').value = me ? me.address : ''; $('fDesc').value = '';
+  $('fMeter').value = me ? me.meter : ''; $('fLoc').value = me ? me.address : ''; $('fDesc').value = ''; clearPhoto();
 }
+var faultPhoto = '';
+function photoPicked(inp) {
+  var f = inp.files && inp.files[0]; if (!f) return;
+  var rd = new FileReader();
+  rd.onload = function () {
+    var im = new Image();
+    im.onload = function () {
+      var m = 640, k = Math.min(1, m / Math.max(im.width, im.height)), c = document.createElement('canvas');
+      c.width = Math.round(im.width * k); c.height = Math.round(im.height * k);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      faultPhoto = c.toDataURL('image/jpeg', 0.6); showPhoto();
+    };
+    im.onerror = function () { setText('faultErr', 'That photo could not be read. Try another.'); };
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(f);
+}
+function showPhoto() {
+  $('photoPrev').src = faultPhoto || '';
+  $('photoPrev').classList.toggle('hide', !faultPhoto);
+  $('photoDel').classList.toggle('hide', !faultPhoto);
+  $('photoBtn').textContent = faultPhoto ? 'Change photo' : 'Take or choose a photo';
+}
+function clearPhoto() { faultPhoto = ''; $('fPhoto').value = ''; showPhoto(); }
 var faultDraft = null;
 function faultReview() {
-  var d = {cat: faultCat, name: $('fName').value.trim(), phone: digits($('fPhone').value), meter: digits($('fMeter').value), loc: $('fLoc').value.trim(), desc: $('fDesc').value.trim()};
+  var d = {cat: faultCat, name: $('fName').value.trim(), phone: digits($('fPhone').value), meter: digits($('fMeter').value), loc: $('fLoc').value.trim(), desc: $('fDesc').value.trim(), photo: faultPhoto};
   if (!d.cat) { setText('faultErr', 'Choose what the problem is.'); return; }
   if (!d.name) { setText('faultErr', 'Enter your name.'); return; }
   if (d.phone.length !== 10) { setText('faultErr', 'Enter a 10-digit phone number.'); return; }
   if (!d.loc) { setText('faultErr', 'Tell us where the fault is.'); return; }
   faultDraft = d;
-  $('faultSum').innerHTML = row('Problem', d.cat) + row('Name', d.name) + row('Phone', d.phone) + (d.meter ? row('Meter or account', d.meter) : '') + row('Location', d.loc) + (d.desc ? '<div class="l">Details</div><div class="v2">' + esc(d.desc) + '</div>' : '');
+  $('faultSum').innerHTML = row('Problem', d.cat) + row('Name', d.name) + row('Phone', d.phone) + (d.meter ? row('Meter or account', d.meter) : '') + row('Location', d.loc) + (d.desc ? '<div class="l">Details</div><div class="v2">' + esc(d.desc) + '</div>' : '') + (d.photo ? '<img class="photo" src="' + d.photo + '" alt="Photo of the fault">' : '');
   $('fireWarn2').innerHTML = d.cat === FIRE ? fireBox() : '';
   $('faultSend').disabled = false;
   show('faultReview');
@@ -735,6 +780,7 @@ function faultSubmit() {
   var list = loadFaults(), f = faultDraft;
   f.ref = newRef(list); f.created = Date.now(); faultDraft = null;
   list.unshift(f); saveFaults(list);
+  if (!loadFaults().some(function (x) { return x.ref === f.ref; })) { f.photo = ''; list[0] = f; saveFaults(list); }
   lastFaultRef = f.ref;
   $('doneRef').textContent = f.ref;
   $('fireWarn3').innerHTML = f.cat === FIRE ? fireBox() : '';
@@ -761,7 +807,7 @@ function trackRef(ref) {
   if (!f) { setText('trackErr', 'No fault with that reference was found on this phone.'); $('trackBody').innerHTML = ''; return; }
   setText('trackErr', '');
   var idx = faultStatus(f), h = '<div class="c"><div class="l">Status</div><div class="v">' + STEPS[idx][2] + '</div>' +
-    row('Reported', fmtDT(new Date(f.created).toISOString())) + row('Problem', f.cat) + row('Location', f.loc) + '</div><div class="c"><div class="sec">Updates</div>';
+    row('Reported', fmtDT(new Date(f.created).toISOString())) + row('Problem', f.cat) + row('Location', f.loc) + (f.photo ? '<img class="photo" src="' + f.photo + '" alt="Photo of the fault">' : '') + '</div><div class="c"><div class="sec">Updates</div>';
   for (var i = 0; i <= idx; i++) h += '<div class="mini"><span><span class="dot' + (i === idx && idx < 3 ? '' : ' done') + '"></span>' + STEPS[i][1] + '</span><span class="l">' + esc(fmtDT(new Date(f.created + STEPS[i][0]).toISOString())) + '</span></div>';
   $('trackBody').innerHTML = h + '</div><div class="tag">Demonstration status. Simulated by the app, not from NWEC.</div>';
   if (f.cat === FIRE) $('trackBody').innerHTML += fireBox();
