@@ -280,7 +280,7 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
 <div class="s" id="fault">
   <button class="lk" onclick="show('track')">‹ Back</button>
   <h2>Report a fault</h2>
-  <div class="tag">Demonstration. Saved on this phone only. Not sent to NWEC.</div>
+  <div class="tag fnote" data-d="Demonstration. Saved on this phone only. Not sent to NWEC." data-r="Test system. Sent to the PowerPay test database for staff to see. Not sent to NWEC."></div>
   <div class="sec">What is the problem?</div>
   <div id="faultCats"></div>
   <div id="fireWarn"></div>
@@ -309,7 +309,8 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
   <div id="fireWarn2"></div>
   <div class="c" id="faultSum"></div>
   <button class="b" id="faultSend" onclick="faultSubmit()">Submit report</button>
-  <p class="n">Demonstration. This report is saved on this phone only. It is not sent to NWEC.</p>
+  <p class="n fnote" data-d="Demonstration. This report is saved on this phone only. It is not sent to NWEC." data-r="This report is sent to the PowerPay test database. It is not sent to NWEC."></p>
+  <p class="err" id="faultSendErr" role="status"></p>
 </div>
 
 <div class="s" id="faultDone">
@@ -318,7 +319,7 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
   <p class="sub">Keep this reference number to follow up.</p>
   <div class="c"><div class="l">Fault reference</div><div class="tok" id="doneRef"></div></div>
   <div id="fireWarn3"></div>
-  <div class="tag">Demonstration. Saved on this phone only. Not sent to NWEC.</div>
+  <div class="tag fnote" data-d="Demonstration. Saved on this phone only. Not sent to NWEC." data-r="Test system. Sent to the PowerPay test database for staff to see. Not sent to NWEC."></div>
   <button class="b" onclick="trackRef(lastFaultRef)">Track this fault</button>
   <button class="b2" onclick="show('home')">Back to home</button>
 </div>
@@ -328,12 +329,12 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
   <h2>Faults</h2>
   <button class="b" id="reportBtn" onclick="show('fault')">Report a fault</button>
   <div class="sec" style="margin-top:22px">Track a fault</div>
-  <div class="tag">Demonstration. The status shown is simulated by the app. It is not a real NWEC update.</div>
+  <div class="tag fnote" data-d="Demonstration. The status shown is simulated by the app. It is not a real NWEC update." data-r="Test system. The status is set by PowerPay staff in the test database. It is not a real NWEC update."></div>
   <input id="tRef" placeholder="Fault reference, e.g. F-ABC123" autocomplete="off" autocapitalize="characters">
   <button class="b2" onclick="trackRef($('tRef').value)" style="margin-top:0">Check status</button>
   <p class="err" id="trackErr" role="status"></p>
   <div id="trackBody"></div>
-  <div class="sec" style="margin-top:18px">Faults reported on this phone</div>
+  <div class="sec" style="margin-top:18px">Your reported faults</div>
   <div id="trackList"></div>
 </div>
 
@@ -488,6 +489,10 @@ function setTab(name) {
   for (var i = 0; i < all.length; i++) { var on = all[i].id === TABOF[name]; all[i].classList.toggle('on', on); if (on) all[i].setAttribute('aria-current', 'page'); else all[i].removeAttribute('aria-current'); }
 }
 function soon(title, text) { $('soonTitle').textContent = title; $('soonText').textContent = text; show('soon'); }
+function setFaultNotes() {
+  var a = document.querySelectorAll('.fnote');
+  for (var i = 0; i < a.length; i++) a[i].textContent = demo ? a[i].getAttribute('data-d') : a[i].getAttribute('data-r');
+}
 function show(name) {
   if (name !== 'wait') stopPolling();
   var all = document.querySelectorAll('.s');
@@ -495,7 +500,7 @@ function show(name) {
   $(name).classList.add('on');
   current = name;
   $('tabbar').classList.toggle('hide', TABS.indexOf(name) < 0);
-  setTab(name);
+  setTab(name); setFaultNotes();
   window.scrollTo(0, 0);
   if (name === 'home') renderHome();
   if (name === 'buy') renderBuy();
@@ -710,7 +715,7 @@ function renderLast() {
     '<button class="b2" id="lastShare" onclick="shareText(\'PowerPay token for meter ' + esc(me.meter) + ': ' + esc(p.token) + '\', $(\'lastShare\'))">Share token</button>';
 }
 
-// ---------- FAULTS (demonstration: kept on this phone, not sent anywhere) ----------
+// ---------- FAULTS (demo: kept on this phone. Signed in: sent to the PowerPay test database) ----------
 var FAULT_CATS = ['No supply', 'Unsuccessful token generation', 'Faulty prepaid meter', 'Low voltage', 'High voltage', 'Fire or explosion'];
 var FIRE = 'Fire or explosion';
 var faultCat = null, lastFaultRef = null;
@@ -774,25 +779,60 @@ function newRef(list) {
   while (list.some(function (f) { return f.ref === r; }));
   return r;
 }
-function faultSubmit() {
-  if (!faultDraft) return;
-  $('faultSend').disabled = true;
-  var list = loadFaults(), f = faultDraft;
-  f.ref = newRef(list); f.created = Date.now(); faultDraft = null;
-  list.unshift(f); saveFaults(list);
-  if (!loadFaults().some(function (x) { return x.ref === f.ref; })) { f.photo = ''; list[0] = f; saveFaults(list); }
-  lastFaultRef = f.ref;
-  $('doneRef').textContent = f.ref;
+function faultDone(ref, f) {
+  lastFaultRef = ref;
+  $('doneRef').textContent = ref;
   $('fireWarn3').innerHTML = f.cat === FIRE ? fireBox() : '';
   show('faultDone');
 }
+function faultSubmit() {
+  if (!faultDraft) return;
+  var f = faultDraft;
+  $('faultSend').disabled = true;
+  if (!demo && session) {
+    setText('faultSendErr', 'Sending…', true);
+    rpc('app_report_fault', {p_session: session, p_category: f.cat, p_name: f.name, p_phone: f.phone, p_meter: f.meter || '', p_location: f.loc, p_details: f.desc || '', p_photo: f.photo || ''}).then(function (r) {
+      faultDraft = null; setText('faultSendErr', '');
+      if (f.photo) savePhoto(r.ref, f.photo);
+      faultDone(r.ref, f);
+    }).catch(function (e) { $('faultSend').disabled = false; failed(e, 'faultSendErr'); });
+    return;
+  }
+  var list = loadFaults();
+  f.ref = newRef(list); f.created = Date.now(); faultDraft = null;
+  list.unshift(f); saveFaults(list);
+  if (!loadFaults().some(function (x) { return x.ref === f.ref; })) { f.photo = ''; list[0] = f; saveFaults(list); }
+  faultDone(f.ref, f);
+}
+function loadPhotos() { try { return JSON.parse(load('pp_fphotos') || '{}'); } catch (e) { return {}; } }
+function savePhoto(ref, p) { var m = loadPhotos(); m[ref] = p; store('pp_fphotos', JSON.stringify(m)); }
+var STATUS_IDX = {'Pending': 0, 'Assigned': 1, 'Being attended to': 2, 'Resolved': 3};
 var STEPS = [[0, 'Reported', 'Pending'], [60000, 'Assigned to a team', 'Assigned'], [180000, 'Team is attending', 'Being attended to'], [360000, 'Marked resolved', 'Resolved']];
 function faultStatus(f) {
   var age = Date.now() - f.created, idx = 0;
   for (var i = 0; i < STEPS.length; i++) if (age >= STEPS[i][0]) idx = i;
   return idx;
 }
-function renderTrack() { setText('trackErr', ''); $('trackBody').innerHTML = ''; drawTrackList(); }
+function renderTrack() {
+  setText('trackErr', ''); $('trackBody').innerHTML = '';
+  if (demo || !session) { drawTrackList(); return; }
+  $('trackList').innerHTML = '<p class="n">Loading…</p>';
+  rpc('app_my_faults', {p_session: session}).then(function (list) { if (current === 'track') drawServerList(list); },
+    function (e) { $('trackList').innerHTML = ''; failed(e, 'trackErr'); });
+}
+function drawServerList(list) {
+  var h = '';
+  for (var i = 0; i < list.length; i++) h += '<button class="opt" onclick="trackRef(\'' + esc(list[i].ref) + '\')"><span>' + esc(list[i].ref) + ' · ' + esc(list[i].category) + '<br><span class="l">' + esc(list[i].status) + '</span></span><i>›</i></button>';
+  $('trackList').innerHTML = h || '<p class="n">You have not reported any faults yet.</p>';
+}
+function serverTrack(f) {
+  var idx = STATUS_IDX[f.status] || 0, photo = loadPhotos()[f.ref];
+  var h = '<div class="c"><div class="l">Status</div><div class="v">' + esc(f.status) + '</div>' +
+    row('Reported', fmtDT(f.created)) + row('Problem', f.category) + row('Location', f.location) + (photo ? '<img class="photo" src="' + photo + '" alt="Photo of the fault">' : '') + '</div><div class="c"><div class="sec">Updates</div>' +
+    '<div class="mini"><span><span class="dot' + (idx === 0 ? '' : ' done') + '"></span>Reported</span><span class="l">' + esc(fmtDT(f.created)) + '</span></div>';
+  if (idx > 0) h += '<div class="mini"><span><span class="dot' + (idx < 3 ? '' : ' done') + '"></span>' + esc(STEPS[idx][1]) + '</span><span class="l">' + esc(fmtDT(f.updated)) + '</span></div>';
+  $('trackBody').innerHTML = h + '</div>' + (f.category === FIRE ? fireBox() : '');
+}
 function drawTrackList() {
   var list = loadFaults(), h = '';
   for (var i = 0; i < list.length; i++) h += '<button class="opt" onclick="trackRef(\'' + esc(list[i].ref) + '\')"><span>' + esc(list[i].ref) + ' · ' + esc(list[i].cat) + '</span><i>›</i></button>';
@@ -803,6 +843,15 @@ function trackRef(ref) {
   show('track');
   $('tRef').value = ref;
   if (!ref) { setText('trackErr', 'Enter your fault reference number.'); return; }
+  if (!demo && session) {
+    setText('trackErr', 'Checking…', true);
+    rpc('app_my_faults', {p_session: session}).then(function (list) {
+      var g = list.filter(function (x) { return x.ref === ref; })[0];
+      if (!g) { setText('trackErr', 'No fault with that reference was found on your account.'); $('trackBody').innerHTML = ''; return; }
+      setText('trackErr', ''); serverTrack(g);
+    }, function (e) { failed(e, 'trackErr'); });
+    return;
+  }
   var f = loadFaults().filter(function (x) { return x.ref === ref; })[0];
   if (!f) { setText('trackErr', 'No fault with that reference was found on this phone.'); $('trackBody').innerHTML = ''; return; }
   setText('trackErr', '');
