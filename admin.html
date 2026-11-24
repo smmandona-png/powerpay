@@ -144,7 +144,25 @@ td{padding:12px 10px}
   table.cards td[data-label="Name"]::before{content:none}
   table.cards td[data-label="Name"] .link{font-size:19px;font-weight:700;text-decoration:none}
   #netBody tr,table:not(.cards) tr{display:table-row}
+  table.cards td[data-label="Problem"]{order:-1;justify-content:flex-start;text-align:left;margin-bottom:6px}
+  table.cards td[data-label="Problem"]::before{content:none}
+  table.cards td[data-label="Problem"] .link{font-size:19px;font-weight:700;text-decoration:none}
 }
+/* faults */
+.chips{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.chip{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:999px;padding:10px 18px;min-height:44px;font-weight:650}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.badge.st0{background:var(--warn-bg);color:var(--warn-fg)}
+.badge.st1{background:var(--chip);color:var(--fg)}
+.badge.st2{background:var(--accent);color:var(--accent-fg)}
+.badge.st3{color:var(--good)}
+.stbtns{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:6px 0 4px}
+.stbtns .chip{border-radius:14px;text-align:center}
+.stbtns .chip:disabled{opacity:.6}
+.fphoto{display:block;max-width:100%;max-height:420px;object-fit:contain;border-radius:16px;margin:10px 0}
+.danger{background:#fdecea;color:#8a1f14;border-radius:14px;padding:12px 16px;font-size:15px;margin:10px 0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .danger{background:#3b1612;color:#ffb4aa}}
+:root[data-theme="dark"] .danger{background:#3b1612;color:#ffb4aa}
 </style>
 </head>
 <body>
@@ -182,6 +200,7 @@ td{padding:12px 10px}
     <div class="tile"><div class="l">Purchases today</div><div class="n" id="tOrders">–</div></div>
     <div class="tile"><div class="l">Last 30 days</div><div class="n" id="t30">–</div><div class="s" id="t30Orders"></div></div>
     <div class="tile"><div class="l">Customers</div><div class="n" id="tCust">–</div></div>
+    <div class="tile"><div class="l">Open faults</div><div class="n" id="tFaults">–</div><div class="s">Not yet resolved</div></div>
   </div>
 
   <div class="row2">
@@ -198,6 +217,32 @@ td{padding:12px 10px}
       </div>
     </section>
   </div>
+
+  <section id="faultsSec">
+    <h2>Faults</h2>
+    <p class="cap" id="faultCap">Reported by customers in the app.</p>
+    <div class="chips"><button class="chip on" id="fcOpen" onclick="setFaultFilter('open')">Open</button><button class="chip" id="fcAll" onclick="setFaultFilter('all')">All</button></div>
+    <div class="panel scroll">
+      <table class="cards">
+        <thead><tr><th>Problem</th><th>Reference</th><th>Name</th><th>Location</th><th>Reported</th><th>Status</th></tr></thead>
+        <tbody id="faultBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="hide" id="faultDetail">
+    <div class="top"><h2 id="fdTitle"></h2><button class="small-btn" onclick="closeFault()">Close</button></div>
+    <div id="fdWarn"></div>
+    <div class="facts" id="fdFacts"></div>
+    <div class="panel">
+      <div class="l" style="color:var(--muted);font-size:13px">Details from the customer</div>
+      <div id="fdDetails" style="margin-top:4px"></div>
+      <div id="fdPhoto"></div>
+    </div>
+    <h2 style="margin-top:18px">Change status</h2>
+    <div class="stbtns" id="fdBtns"></div>
+    <p class="err" id="fdErr" role="status"></p>
+  </section>
 
   <section>
     <h2>Customers</h2>
@@ -284,7 +329,7 @@ $('loginForm').addEventListener('submit', function (ev) {
 });
 function signOut() {
   var s = session; session = null; store(null); $('user').value = ''; $('pass').value = '';
-  closeDetail(); showLogin('');
+  closeDetail(); closeFault(); showLogin('');
   if (s) rpc('admin_logout', {p_session: s}).catch(function () {});
 }
 
@@ -298,6 +343,7 @@ function startDash() {
 function refresh() {
   if (!session) return;
   rpc('admin_summary', {p_session: session}).then(renderSummary, failed);
+  loadFaultList();
 }
 function renderSummary(s) {
   $('tToday').textContent = fmtK(s.today.kwacha);
@@ -391,6 +437,64 @@ function openCustomer(acc) {
 }
 function closeDetail() { $('detail').classList.add('hide'); openAccount = null; }
 
+// ---------- faults ----------
+var FSTAT = ['Pending', 'Assigned', 'Being attended to', 'Resolved'], faultList = [], faultFilter = 'open', openFault = null;
+function stIdx(s) { var i = FSTAT.indexOf(s); return i < 0 ? 0 : i; }
+function badge(s) { return '<span class="badge st' + stIdx(s) + '">' + esc(s) + '</span>'; }
+function loadFaultList() {
+  if (!session) return;
+  rpc('admin_faults', {p_session: session}).then(function (r) {
+    faultList = r.list || [];
+    $('tFaults').textContent = fmtNum(r.open);
+    drawFaultList();
+  }, function (e) { if (e.message === 'Staff sign-in required.') failed(e); else $('faultCap').textContent = e.message; });
+}
+function setFaultFilter(f) {
+  faultFilter = f;
+  $('fcOpen').classList.toggle('on', f === 'open'); $('fcAll').classList.toggle('on', f === 'all');
+  drawFaultList();
+}
+function drawFaultList() {
+  var rows = faultList.filter(function (f) { return faultFilter === 'all' || f.status !== 'Resolved'; }), h = '';
+  for (var i = 0; i < rows.length; i++) {
+    var f = rows[i];
+    h += '<tr><td data-label="Problem"><button class="link" onclick="openFaultRef(\'' + esc(f.ref) + '\')">' + esc(f.category) + '</button></td><td data-label="Reference">' + esc(f.ref) + '</td><td data-label="Name">' + esc(f.name) + '</td><td data-label="Location">' + esc(f.location) + '</td><td data-label="Reported">' + esc(fmtDateTime(f.created)) + '</td><td data-label="Status">' + badge(f.status) + '</td></tr>';
+  }
+  $('faultBody').innerHTML = h || '<tr><td colspan="6" class="empty">' + (faultFilter === 'open' ? 'No open faults.' : 'No faults reported yet.') + '</td></tr>';
+  $('faultCap').textContent = rows.length + (rows.length === 1 ? ' fault' : ' faults') + (faultFilter === 'open' ? ' open. Newest first.' : ' shown. Open ones first.') + ' Reported by customers in the app.';
+}
+function openFaultRef(ref) {
+  $('fdErr').textContent = '';
+  rpc('admin_fault', {p_session: session, p_ref: ref}).then(function (f) { openFault = f; drawFault(); $('faultDetail').classList.remove('hide'); $('faultDetail').scrollIntoView({behavior: 'smooth', block: 'start'}); }, failed);
+}
+function drawFault() {
+  var f = openFault;
+  $('fdTitle').textContent = f.category + ' · ' + f.ref;
+  $('fdWarn').innerHTML = f.category === 'Fire or explosion' ? '<div class="danger"><b>Danger report.</b> Fire or explosion. Treat as urgent.</div>' : '';
+  $('fdFacts').innerHTML = [['Status', null], ['Customer', f.name], ['Phone', f.phone], ['Account', f.account || '–'], ['Meter', f.meter || '–'], ['Location', f.location], ['Reported', fmtDateTime(f.created)], ['Last change', fmtDateTime(f.updated)]].map(function (x) {
+    return '<div><div class="l">' + esc(x[0]) + '</div><div class="v">' + (x[1] === null ? badge(f.status) : esc(x[1])) + '</div></div>';
+  }).join('');
+  $('fdDetails').textContent = f.details || 'No extra detail given.';
+  $('fdPhoto').innerHTML = (f.photo && String(f.photo).indexOf('data:image/') === 0) ? '<img class="fphoto" alt="Photo of the fault sent by the customer" src="' + f.photo + '">' : '';
+  $('fdBtns').innerHTML = FSTAT.map(function (s, i) {
+    return '<button class="chip' + (s === f.status ? ' on' : '') + '" onclick="setFaultStatus(' + i + ')">' + esc(s) + '</button>';
+  }).join('');
+}
+function setFaultStatus(i) {
+  var f = openFault, s = FSTAT[i];
+  if (!f || s === f.status) return;
+  var b = $('fdBtns').children; for (var k = 0; k < b.length; k++) b[k].disabled = true;
+  $('fdErr').textContent = 'Saving…'; $('fdErr').style.color = 'var(--muted)';
+  rpc('admin_set_fault', {p_session: session, p_ref: f.ref, p_status: s}).then(function () {
+    f.status = s; f.updated = new Date().toISOString(); $('fdErr').textContent = 'Saved. The customer will see "' + s + '" in the app.'; $('fdErr').style.color = 'var(--good)';
+    drawFault(); loadFaultList();
+  }, function (e) {
+    for (var k = 0; k < b.length; k++) b[k].disabled = false;
+    $('fdErr').style.color = ''; if (e.message === 'Staff sign-in required.') failed(e); else $('fdErr').textContent = e.message;
+  });
+}
+function closeFault() { $('faultDetail').classList.add('hide'); openFault = null; }
+
 // ---------- start ----------
 var resizeTimer = null;
 window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(function () { if (lastDays && !$('dash').classList.contains('hide')) drawChart(lastDays); }, 150); });
@@ -401,14 +505,14 @@ window.addEventListener('resize', function () { clearTimeout(resizeTimer); resiz
   rpc('admin_summary', {p_session: session}).then(function (s) {
     showDash('Staff');
     renderSummary(s);
-    searchCustomers();
+    searchCustomers(); loadFaultList();
     refreshTimer = setInterval(refresh, 60000);
   }, function (e) {
     if (e.message === 'Staff sign-in required.') { session = null; store(null); showLogin(''); return; }
     // Any other problem (no connection, a server hiccup): keep the sign-in, show the page and let Refresh retry.
     showDash('Staff');
     $('updated').textContent = e.message + ' Tap Refresh to try again.';
-    searchCustomers();
+    searchCustomers(); loadFaultList();
   });
 })();
 </script>
