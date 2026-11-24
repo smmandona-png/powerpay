@@ -72,11 +72,12 @@ jobs:
 
       - name: Check the signing key is the permanent one
         run: |
-          WANT=$(keytool -list -v -keystore android/app/fixed.keystore -storepass android -alias androiddebugkey | grep 'SHA256:' | head -1)
-          GOT=$(keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep 'SHA256:' | head -1)
+          WANT=$(keytool -list -v -keystore android/app/fixed.keystore -storepass android -alias androiddebugkey | grep 'SHA256:' | head -1 | sed 's/.*SHA256: *//' | tr -d ':' | tr 'A-F' 'a-f')
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          GOT=$("${BT}apksigner" verify --print-certs android/app/build/outputs/apk/debug/app-debug.apk | grep 'certificate SHA-256 digest' | head -1 | sed 's/.*digest: *//' | tr 'A-F' 'a-f')
           echo "want: $WANT"
           echo "got:  $GOT"
-          test "$WANT" = "$GOT"
+          test -n "$WANT" && test "$WANT" = "$GOT"
 
       - name: Publish APK
         env:
